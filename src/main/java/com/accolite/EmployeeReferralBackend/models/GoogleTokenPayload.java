@@ -8,4 +8,5 @@ import lombok.*;
 @AllArgsConstructor
 public class GoogleTokenPayload {
     String email;
+    String name;
 }
