@@ -17,7 +17,6 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     String email;
-
     @Enumerated(EnumType.STRING)
     Role role;
     double totalBonus;
