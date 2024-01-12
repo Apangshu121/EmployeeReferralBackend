@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public class NlpProcessor {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b");
     private static final Pattern PRIMARY_SKILL_PATTERN = Pattern.compile("\\bPrimary\\s*Skill\\s*:\\s*([A-Za-z+]+)\\b");
-    private static final String MODEL_PATH = "C:\\Users\\pranav.virmani\\Downloads\\pdf10\\src\\main\\resources\\models\\en-ner-person.bin";
+    private static final String MODEL_PATH = "en-ner-person.bin";
 
     public static ResumeData extractResumeData(String text) throws IOException {
         TokenNameFinderModel nameModel = loadModel(MODEL_PATH);

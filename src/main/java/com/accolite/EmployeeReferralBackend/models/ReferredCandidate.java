@@ -19,7 +19,7 @@ public class ReferredCandidate{
     String referrerEmail;
     String primarySkill;
     String candidateName;
-    int YOE;
+    int experience;
     long contactNumber;
     String candidateEmail;
     String currentStatus;
@@ -30,7 +30,4 @@ public class ReferredCandidate{
     String interviewedPosition;
     String currentLocation;
     String businessUnit;
-    public String getPanNumber() {
-        return panNumber;
-    }
 }

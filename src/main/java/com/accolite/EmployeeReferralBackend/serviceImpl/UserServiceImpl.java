@@ -1,7 +1,10 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
 import com.accolite.EmployeeReferralBackend.models.GoogleTokenPayload;
+import com.accolite.EmployeeReferralBackend.models.User;
+import com.accolite.EmployeeReferralBackend.repository.UserRepository;
 import com.accolite.EmployeeReferralBackend.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -9,13 +12,17 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class UserServiceImpl implements UserService {
 
+    @Autowired
+    UserRepository userRepository;
+
     private final String googleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
     @Override
-    public ResponseEntity<Map<String, Object>> getNameOfUser(String googleToken) {
+    public ResponseEntity<Map<String, Object>> getDetailsOfUser(String googleToken) {
         System.out.println(googleToken);
         try{
 
@@ -27,8 +34,13 @@ public class UserServiceImpl implements UserService {
             if(response.getBody()!=null)
             {
                 String name = response.getBody().getName();
+                String email = response.getBody().getEmail();
+
+                User user = userRepository.findByEmail(email).orElseThrow();
+
                 Map<String,Object> responseMap = new HashMap<>();
                 responseMap.put("name",name);
+                responseMap.put("role", user.getRole());
 
                 return ResponseEntity.ok(responseMap);
             } else {

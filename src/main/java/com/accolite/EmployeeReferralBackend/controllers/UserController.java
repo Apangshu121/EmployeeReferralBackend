@@ -3,10 +3,7 @@ package com.accolite.EmployeeReferralBackend.controllers;
 import com.accolite.EmployeeReferralBackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -17,9 +14,19 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @GetMapping("/getName")
-    public ResponseEntity<Map<String,Object>> getNameOfUser(@RequestBody String googleToken)
-    {
-        return userService.getNameOfUser(googleToken);
+    @GetMapping("/getUserDetails")
+    public ResponseEntity<Map<String, Object>> getDetailsOfUser(@RequestHeader("Authorization") String authorizationHeader) {
+
+        String googleToken = extractTokenFromHeader(authorizationHeader);
+        return userService.getDetailsOfUser(googleToken);
+    }
+
+    private String extractTokenFromHeader(String authorizationHeader) {
+        String[] headerParts = authorizationHeader.split(" ");
+        if (headerParts.length == 2 && "Bearer".equals(headerParts[0])) {
+            return headerParts[1];
+        }
+
+        return null;
     }
 }
