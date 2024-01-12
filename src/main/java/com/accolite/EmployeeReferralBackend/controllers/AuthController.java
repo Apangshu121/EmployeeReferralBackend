@@ -15,11 +15,13 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.accolite.EmployeeReferralBackend.models.User.*;
+
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserRepository userRepository;
+    private UserRepository userRepository;
     private String googleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
 
     @PostMapping("/LoginWithGoogle")

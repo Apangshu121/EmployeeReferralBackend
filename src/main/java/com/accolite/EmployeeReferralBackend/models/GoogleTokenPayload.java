@@ -6,6 +6,12 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class GoogleTokenPayload {
     String email;
+
+
+    public String getEmail() {
+        return this.email;
+    }
 }
