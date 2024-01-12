@@ -17,16 +17,28 @@ public class ReferredCandidateController {
 
 
     @PostMapping("/add")
-    public ResponseEntity<String> addReferredCandidate(@RequestBody ReferredCandidate referredCandidate) {
-        referredCandidateService.addReferredCandidate(referredCandidate);
+    public ResponseEntity<String> addReferredCandidate(@RequestHeader("Authorization") String authorizationHeader,@RequestBody ReferredCandidate referredCandidate) {
+        String googleToken = extractTokenFromHeader(authorizationHeader);
+        referredCandidateService.addReferredCandidate(googleToken, referredCandidate);
+
         return ResponseEntity.ok("Referred candidate added successfully");
     }
 
     // Modify
     @GetMapping("/getAllCandidatesOfUser")
-    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(@RequestBody String googleToken)
+    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(@RequestHeader("Authorization") String authorizationHeader)
     {
+        String googleToken = extractTokenFromHeader(authorizationHeader);
         return referredCandidateService.getReferredCandidatesOfUser(googleToken);
+    }
+
+    private String extractTokenFromHeader(String authorizationHeader) {
+        String[] headerParts = authorizationHeader.split(" ");
+        if (headerParts.length == 2 && "Bearer".equals(headerParts[0])) {
+            return headerParts[1];
+        }
+
+        return null;
     }
 
     @GetMapping("/getAll")
