@@ -15,18 +15,7 @@ public class UserController {
     UserService userService;
 
     @GetMapping("/getUserDetails")
-    public ResponseEntity<Map<String, Object>> getDetailsOfUser(@RequestHeader("Authorization") String authorizationHeader) {
-
-        String googleToken = extractTokenFromHeader(authorizationHeader);
-        return userService.getDetailsOfUser(googleToken);
-    }
-
-    private String extractTokenFromHeader(String authorizationHeader) {
-        String[] headerParts = authorizationHeader.split(" ");
-        if (headerParts.length == 2 && "Bearer".equals(headerParts[0])) {
-            return headerParts[1];
-        }
-
-        return null;
+    public ResponseEntity<Map<String, Object>> getDetailsOfUser() {
+        return userService.getDetailsOfUser();
     }
 }

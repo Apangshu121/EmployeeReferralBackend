@@ -17,32 +17,23 @@ public class ReferredCandidateController {
 
 
     @PostMapping("/add")
-    public ResponseEntity<String> addReferredCandidate(@RequestHeader("Authorization") String authorizationHeader,@RequestBody ReferredCandidate referredCandidate) {
-        String googleToken = extractTokenFromHeader(authorizationHeader);
-        referredCandidateService.addReferredCandidate(googleToken, referredCandidate);
+    public ResponseEntity<Map<String,Object>> addReferredCandidate(@RequestBody ReferredCandidate referredCandidate) {
+        return referredCandidateService.addReferredCandidate(referredCandidate);
 
-        return ResponseEntity.ok("Referred candidate added successfully");
     }
 
     // Modify
     @GetMapping("/getAllCandidatesOfUser")
-    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(@RequestHeader("Authorization") String authorizationHeader)
+    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String authorizationHeader)
     {
-        String googleToken = extractTokenFromHeader(authorizationHeader);
-        return referredCandidateService.getReferredCandidatesOfUser(googleToken);
-    }
-
-    private String extractTokenFromHeader(String authorizationHeader) {
-        String[] headerParts = authorizationHeader.split(" ");
-        if (headerParts.length == 2 && "Bearer".equals(headerParts[0])) {
-            return headerParts[1];
-        }
-
-        return null;
+        return referredCandidateService.getReferredCandidatesOfUser();
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<Map<String,Object>> getAllCandidates(){
         return referredCandidateService.getAllCandidates();
     }
+
+    @GetMapping("/get/{id}")
+    public ResponseEntity<Map<String,Object>> getReferredCandidateById(@PathVariable int id){ return referredCandidateService.getCandidateById(id);}
 }

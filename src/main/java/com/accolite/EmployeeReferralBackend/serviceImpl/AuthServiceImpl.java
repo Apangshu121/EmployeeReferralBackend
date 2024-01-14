@@ -1,5 +1,6 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
+import com.accolite.EmployeeReferralBackend.config.JwtService;
 import com.accolite.EmployeeReferralBackend.models.GoogleTokenPayload;
 import com.accolite.EmployeeReferralBackend.models.Role;
 import com.accolite.EmployeeReferralBackend.models.User;
@@ -19,6 +20,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    JwtService jwtService;
+
     private final String googleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
     @Override
     public ResponseEntity<Map<String, Object>> saveUser(String googleToken) {
@@ -52,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
         ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
 
         // System.out.println(response.getBody().getEmail()); To get the email
+        String jwtToken;
 
         if(response.getBody()!=null)
         {
@@ -60,8 +66,10 @@ public class AuthServiceImpl implements AuthService {
                     .orElse(null);
 
             if(user==null){
-                var userEntry = User.builder().email(response.getBody().getEmail()).role(Role.EMPLOYEE).build();
-                userRepository.save(userEntry);
+                var userEntry = User.builder().email(response.getBody().getEmail()).name(response.getBody().getName()).role(Role.EMPLOYEE).build();
+                jwtToken = jwtService.generateToken(userRepository.save(userEntry));
+            }else{
+                jwtToken = jwtService.generateToken(user);
             }
 
         }else{
@@ -69,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (response.getStatusCode() == HttpStatus.OK) {
-            return googleToken;
+            return jwtToken;
         } else {
             return null;
         }
