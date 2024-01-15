@@ -33,7 +33,8 @@ public class SecurityConfig {
             "/api/selectedReferredCandidates/update/**",
             "/api/referredCandidates/filterByExperience/**",
             "/api/referredCandidates/filterByPreferredLocation/**",
-            "/api/referredCandidates/filterByNoticePeriod/**"
+            "/api/referredCandidates/filterByNoticePeriod/**",
+            "/api/referredCandidates/sendMail/**"
 
     };
 

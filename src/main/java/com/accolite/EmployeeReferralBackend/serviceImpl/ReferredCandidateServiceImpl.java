@@ -7,8 +7,11 @@ import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateReposito
 import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -24,9 +27,14 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     @Autowired
     ReferredCandidateRepository referredCandidateRepository;
-
     @Autowired
     SelectedReferredCandidateRepository selectedReferredCandidateRepository;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Value("${spring.mail.username}")
+    private String fromMail;
 
     public ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate) {
 
@@ -162,10 +170,12 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             if (updatedReferredCandidate.getCurrentStatus() != null) {
                 referredCandidate.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
+                referredCandidate.setCurrentStatusUpdated(true);
             }
 
             if (updatedReferredCandidate.getInterviewStatus() != null) {
                 referredCandidate.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
+                referredCandidate.setInterviewStatusUpdated(true);
             }
 
             if (updatedReferredCandidate.getInterviewedPosition() != null){
@@ -186,7 +196,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
 
-//       System.out.println(savedReferredCandidate.getCurrentStatus().equals("SELECT"));
 
             if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
             {
@@ -275,6 +284,191 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> sendMail(int id) {
+
+        try {
+           ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
+
+           boolean flag1=false;
+           boolean flag2=false;
+
+           if(referredCandidate.isInterviewStatusUpdated()){
+               referredCandidate.setInterviewStatusUpdated(false);
+               flag1=true;
+               SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+               simpleMailMessage.setFrom(fromMail);
+               String subject= getSubjectOfCandidate(referredCandidate.getInterviewStatus());
+               String template = getTemplateOfCandidate(referredCandidate.getInterviewStatus(),referredCandidate.getCandidateName());
+               simpleMailMessage.setSubject(subject);
+               simpleMailMessage.setText(template);
+               simpleMailMessage.setTo(referredCandidate.getCandidateEmail());
+               mailSender.send(simpleMailMessage);
+
+               SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
+               simpleMailMessage1.setFrom(fromMail);
+               String subject1= getSubjectOfReferrer(referredCandidate.getInterviewStatus(),referredCandidate.getCandidateName());
+               String template1 = getTemplateOfReferrer(referredCandidate.getInterviewStatus(),referredCandidate.getCandidateName());
+               simpleMailMessage1.setSubject(subject1);
+               simpleMailMessage1.setText(template1);
+               simpleMailMessage1.setTo(referredCandidate.getReferrerEmail());
+               mailSender.send(simpleMailMessage1);
+           }
+
+           if(referredCandidate.isCurrentStatusUpdated()){
+               referredCandidate.setCurrentStatusUpdated(false);
+               flag2=true;
+               SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+               simpleMailMessage.setFrom(fromMail);
+               String subject= getSubjectOfCandidateForCurrentStatus(referredCandidate.getCandidateName());
+               String template = getTemplateOfCandidateForCurrentStatus(referredCandidate.getCurrentStatus(),referredCandidate.getCandidateName());
+               simpleMailMessage.setSubject(subject);
+               simpleMailMessage.setText(template);
+               simpleMailMessage.setTo(referredCandidate.getCandidateEmail());
+               mailSender.send(simpleMailMessage);
+
+               SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
+               simpleMailMessage1.setFrom(fromMail);
+               String subject1= getSubjectOfReferrerForCandidateStatus(referredCandidate.getCandidateName());
+               String template1 = getTemplateOfReferrerForCandidateForCandidateStatus(referredCandidate.getCurrentStatus(),referredCandidate.getCandidateName());
+               simpleMailMessage1.setSubject(subject1);
+               simpleMailMessage1.setText(template1);
+               simpleMailMessage1.setTo(referredCandidate.getReferrerEmail());
+               mailSender.send(simpleMailMessage1);
+           }
+
+           if(!flag1 && !flag2){
+               Map<String, Object> errorMap = new HashMap<>();
+               errorMap.put("status", "error");
+               errorMap.put("message", "Mail already sent to both the referrer and candidate about the status of their recruitment process");
+               return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+           }
+
+           referredCandidateRepository.save(referredCandidate);
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", "Mails are sent successfully to both candidate and referrer");
+
+            return ResponseEntity.ok(responseJson);
+
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    private String getTemplateOfReferrerForCandidateForCandidateStatus(String currentStatus, String candidateName) {
+        String greeting = "Hello " + "Referrer" + ",\n\n";
+        String content = switch (currentStatus.toUpperCase()) {
+            case "SELECT" ->
+                    "Great news! The candidate you referred, " + candidateName + ", has been selected for the position.";
+            case "REJECT" -> "We regret to inform you that the candidate you referred, " +
+                    candidateName + ", did not pass the interview process and won't be moving forward.";
+            case "DROP" -> "The application of the candidate you referred, " + candidateName +
+                    ", has been dropped for the current position.";
+            case "ON HOLD" -> "The application of the candidate you referred, " + candidateName +
+                    ", is currently on hold. We will provide further updates soon.";
+            case "BETTER QUALIFIED FOR OTHER POSITION" -> "While the candidate you referred, " + candidateName +
+                    ", was not selected for the current position, we believe they are better qualified for another position.";
+            default -> "The status of the candidate you referred, " + candidateName +
+                    ", has been updated to " + currentStatus + ". Please check the candidate's application status.";
+        };
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String getSubjectOfReferrerForCandidateStatus(String candidateName) {
+        String subject = "Application Status Update for Referred Candidate: " + candidateName;
+
+        return subject;
+    }
+
+    private String getTemplateOfCandidateForCurrentStatus(String currentStatus, String candidateName) {
+        String greeting = "Hello " + candidateName + ",\n\n";
+        String content = switch (currentStatus.toUpperCase()) {
+            case "SELECT" -> "Congratulations! You have been selected for the position.";
+            case "REJECT" -> "We appreciate your effort, but unfortunately, you did not pass the interview process.";
+            case "DROP" -> "Your application has been dropped for the current position.";
+            case "ON HOLD" -> "Your application is currently on hold. We will provide further updates soon.";
+            case "BETTER QUALIFIED FOR OTHER POSITION" ->
+                    "While you were not selected for the current position, we believe you are better qualified for another position.";
+            default -> "Your status has been updated to " + currentStatus + ". Please check your application status.";
+        };
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String getSubjectOfCandidateForCurrentStatus(String candidateName) {
+
+        return "Application Status Update for " + candidateName;
+    }
+
+    private String getTemplateOfReferrer(String interviewStatus, String candidateName) {
+        String greeting = "Hello Referrer,\n\n";
+        String content = switch (interviewStatus.toUpperCase()) {
+            case "CODELYSER SELECT" -> "We are pleased to inform you that the candidate you referred, " +
+                    candidateName + ", has passed the Codelyser assessment test and has been selected for the next round.";
+            case "R1 SELECT" -> "Great news! The candidate you referred, " + candidateName +
+                    ", has successfully passed Round 1 of the interview and has been selected for the next round.";
+            case "R2 SELECT" -> "Exciting news! The candidate you referred, " + candidateName +
+                    ", has passed Round 2 of the interview and has been selected for the next round.";
+            case "R3 SELECT" -> "Congratulations! The candidate you referred, " + candidateName +
+                    ", has passed Round 3 of the interview.";
+            case "CODELYSER REJECT", "R1 REJECT", "R2 REJECT", "R3 REJECT" ->
+                    "We regret to inform you that the candidate you referred, " +
+                            candidateName + ", did not pass the assessment/interview and won't be moving forward.";
+            default -> "The status of the candidate you referred, " +
+                    candidateName + ", has been updated. Please check the candidate's status.";
+        };
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String getSubjectOfReferrer(String interviewStatus, String candidateName) {
+        String subject = "Candidate Status Update for " + candidateName;
+
+        return subject;
+    }
+
+    private String getTemplateOfCandidate(String interviewStatus, String candidateName) {
+        String greeting = "Hello "+candidateName+",\n\n";
+        String content = switch (interviewStatus.toUpperCase()) {
+            case "CODELYSER SELECT" ->
+                    "Congratulations on passing the Codelyser assessment test! You have been selected for the next round.";
+            case "R1 SELECT" ->
+                    "Congratulations on passing Round 1 of the interview! You have been selected for the next round.";
+            case "R2 SELECT" ->
+                    "Congratulations on passing Round 2 of the interview! You have been selected for the next round.";
+            case "R3 SELECT" ->
+                    "Congratulations on passing Round 3 of the interview! You have been selected for the next round.";
+            case "CODELYSER REJECT" ->
+                    "We appreciate your effort, but unfortunately, you did not pass the Codelyser assessment test.";
+            case "R1 REJECT" ->
+                    "We appreciate your effort, but unfortunately, you did not pass Round 1 of the interview.";
+            case "R2 REJECT" ->
+                    "We appreciate your effort, but unfortunately, you did not pass Round 2 of the interview.";
+            case "R3 REJECT" ->
+                    "We appreciate your effort, but unfortunately, you did not pass Round 3 of the interview.";
+            default -> "Your interview status has been updated.";
+        };
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String getSubjectOfCandidate(String interviewStatus) {
+        return switch (interviewStatus.toUpperCase()) {
+            case "CODELYSER SELECT", "R1 SELECT", "R2 SELECT", "R3 SELECT" ->
+                    "Congratulations! You have been selected for the next round";
+            case "CODELYSER REJECT", "R1 REJECT", "R2 REJECT", "R3 REJECT" ->
+                    "We appreciate your effort, but we won't be moving forward";
+            default -> "Interview Status Update";
+        };
+    }
+
     private double calculateBonus(String band) {
 
         switch (band) {

@@ -33,9 +33,11 @@ public class ReferredCandidate{
     long contactNumber;
     String candidateEmail;
     String currentStatus; // Select, Reject, Drop, On Hold, Better qualified for other position, Pool(Default)
+    boolean currentStatusUpdated;
     String panNumber;
     boolean willingToRelocate;
     String interviewStatus; // Codelyser Select, R1 Select, R2 Select, R3 Select, Codelyser Reject, R1 Reject, R2 Reject, R3 Reject
+    boolean interviewStatusUpdated;
     String interviewedPosition;
     String preferredLocation;
     String businessUnit;

@@ -57,4 +57,9 @@ public class ReferredCandidateController {
             @PathVariable int noticePeriod) {
         return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqual(noticePeriod);
     }
+
+    @PostMapping("/sendMail/{id}")
+    public ResponseEntity<Map<String,Object>> sendMail(@PathVariable int id){
+        return referredCandidateService.sendMail(id);
+    }
 }
