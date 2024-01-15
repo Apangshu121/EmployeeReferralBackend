@@ -42,19 +42,24 @@ public class ReferredCandidateController {
         public ResponseEntity<Map<String,Object>> updateReferredCandidate(@PathVariable int id, @RequestBody ReferredCandidate referredCandidate){ return referredCandidateService.updateReferredCandidate(id, referredCandidate);}
 
     @GetMapping("/filterByExperience/{experience}")
-    public ResponseEntity<List<ReferredCandidate>> filterCandidatesByExperience(
+    public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(
             @PathVariable int experience) {
         return referredCandidateService.filterCandidatesByExperience(experience);
     }
     @GetMapping("/filterByPreferredLocation/{preferredLocation}")
-    public ResponseEntity<List<ReferredCandidate>> filterCandidatesByPreferredLocation(
+    public ResponseEntity<Map<String,Object>> filterCandidatesByPreferredLocation(
             @PathVariable String preferredLocation) {
         return referredCandidateService.filterCandidatesByPreferredLocation(preferredLocation);
     }
 
     @GetMapping("/filterByNoticePeriod/{noticePeriod}")
-    public ResponseEntity<List<ReferredCandidate>> filterCandidatesByNoticePeriod(
+    public ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriod(
             @PathVariable int noticePeriod) {
         return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqual(noticePeriod);
+    }
+
+    @PostMapping("/sendMail/{id}")
+    public ResponseEntity<Map<String,Object>> sendMail(@PathVariable int id){
+        return referredCandidateService.sendMail(id);
     }
 }

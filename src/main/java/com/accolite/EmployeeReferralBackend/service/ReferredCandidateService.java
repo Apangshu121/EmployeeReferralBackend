@@ -19,11 +19,12 @@ public interface ReferredCandidateService {
 
     ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, ReferredCandidate referredCandidate);
 
-    ResponseEntity<List<ReferredCandidate>> filterCandidatesByExperience(int experience);
+    ResponseEntity<Map<String,Object>> filterCandidatesByExperience(int experience);
 
-    ResponseEntity<List<ReferredCandidate>> filterCandidatesByPreferredLocation(String preferredLocation);
+    ResponseEntity<Map<String,Object>> filterCandidatesByPreferredLocation(String preferredLocation);
 
-    ResponseEntity<List<ReferredCandidate>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriod);
+    ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriod);
 
+    ResponseEntity<Map<String,Object>> sendMail(int id);
 }
 
