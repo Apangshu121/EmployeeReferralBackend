@@ -15,10 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -106,7 +103,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             String email = ((UserDetails)principal).getUsername();
 
-            List<CandidateDetails> referredCandidates = referredCandidateRepository.findAllCandidatesOfReferrer(email);
+            List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByReferrerEmail(email);
             Map<String,Object> referredCandidatesJson = new HashMap<>();
 
             referredCandidatesJson.put("referredCandidates",referredCandidates);
@@ -125,7 +122,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
         try{
             Map<String,Object> responseJson = new HashMap<>();
-                List<CandidateDetails> allReferredCandidates = referredCandidateRepository.findAllCandidates();
+                List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAll();
 
             responseJson.put("candidates",allReferredCandidates);
 
@@ -183,13 +180,13 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 referredCandidate.setBand(updatedReferredCandidate.getBand().toUpperCase());
             }
 
-             ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
+            ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
 
             System.out.println(savedReferredCandidate);
 
             Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
 
-     //       System.out.println(savedReferredCandidate.getCurrentStatus().equals("SELECT"));
+//       System.out.println(savedReferredCandidate.getCurrentStatus().equals("SELECT"));
 
             if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
             {
@@ -232,7 +229,52 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+    @Override
+    public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(int experience) {
+        try {
+            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
+            Map<String, Object> responseJson = new HashMap<>();
 
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocation(String preferredLocation) {
+        try {
+            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriod) {
+        try {
+            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLessThanOrEqual(noticePeriod);
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
     private double calculateBonus(String band) {
 
         switch (band) {

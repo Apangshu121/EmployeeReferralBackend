@@ -30,12 +30,15 @@ public class SecurityConfig {
             "/api/referredCandidates/update/**",
             "/api/selectedReferredCandidates/getAll",
             "/api/selectedReferredCandidates/get/**",
-            "/api/selectedReferredCandidates/update/**"
+            "/api/selectedReferredCandidates/update/**",
+            "/api/referredCandidates/filterByExperience/**",
+            "/api/referredCandidates/filterByPreferredLocation/**",
+            "/api/referredCandidates/filterByNoticePeriod/**"
+
     };
 
     private static final String[] ADMIN_LIST_URL = {"/admin/users/modify/**","/admin/users/all"};
 
-    private static final String[] BU_HEAD_LIST_URL = {};
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -46,7 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","BU_HEAD","ADMIN")
                         .requestMatchers(RECRUITER_LIST_URL).hasAuthority("RECRUITER")
                         .requestMatchers(ADMIN_LIST_URL).hasAuthority("ADMIN")
-                        .requestMatchers(BU_HEAD_LIST_URL).hasAuthority("BU_HEAD").anyRequest()
+                        .anyRequest()
                         .authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
