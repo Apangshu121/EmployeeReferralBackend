@@ -185,10 +185,22 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
              ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
 
+            System.out.println(savedReferredCandidate);
+
             Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
+
+     //       System.out.println(savedReferredCandidate.getCurrentStatus().equals("SELECT"));
 
             if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
             {
+
+                if(referredCandidate.getBand() == null)
+                {
+                    Map<String, Object> errorMap = new HashMap<>();
+                    errorMap.put("status", "error");
+                    errorMap.put("message", "Band not set");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+                }
 
                 String band = referredCandidate.getBand();
 
@@ -204,6 +216,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                         referrerEmail(referredCandidate.getReferrerEmail()).
                         currentlyInCompany(true).build();
 
+                System.out.println(selectedReferredCandidate);
 
                 selectedReferredCandidateRepository.save(selectedReferredCandidate);
             }
