@@ -33,7 +33,7 @@ public class SecurityConfig {
             "/api/selectedReferredCandidates/update/**"
     };
 
-    private static final String[] ADMIN_LIST_URL = {};
+    private static final String[] ADMIN_LIST_URL = {"/admin/users/modify/**","/admin/users/all"};
 
     private static final String[] BU_HEAD_LIST_URL = {};
 
