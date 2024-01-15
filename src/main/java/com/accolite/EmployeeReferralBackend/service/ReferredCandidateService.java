@@ -15,5 +15,7 @@ public interface ReferredCandidateService {
     ResponseEntity<Map<String, Object>> getAllCandidates();
 
     ResponseEntity<Map<String, Object>> getCandidateById(int id);
+
+    ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, ReferredCandidate referredCandidate);
 }
 

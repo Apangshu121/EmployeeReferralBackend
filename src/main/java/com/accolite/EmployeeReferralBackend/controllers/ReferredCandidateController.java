@@ -24,7 +24,7 @@ public class ReferredCandidateController {
 
     // Modify
     @GetMapping("/getAllCandidatesOfUser")
-    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String authorizationHeader)
+    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser()
     {
         return referredCandidateService.getReferredCandidatesOfUser();
     }
@@ -36,4 +36,7 @@ public class ReferredCandidateController {
 
     @GetMapping("/get/{id}")
     public ResponseEntity<Map<String,Object>> getReferredCandidateById(@PathVariable int id){ return referredCandidateService.getCandidateById(id);}
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Map<String,Object>> updateReferredCandidate(@PathVariable int id, @RequestBody ReferredCandidate referredCandidate){ return referredCandidateService.updateReferredCandidate(id, referredCandidate);}
 }

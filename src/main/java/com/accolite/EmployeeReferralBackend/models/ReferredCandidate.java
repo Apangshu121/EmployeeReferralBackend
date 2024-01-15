@@ -36,11 +36,11 @@ public class ReferredCandidate{
     String panNumber;
     boolean willingToRelocate;
     String interviewStatus; // Codelyser Select, R1 Select, R2 Select, R3 Select, Codelyser Reject, R1 Reject, R2 Reject, R3 Reject
-    //Band
     String interviewedPosition;
     String preferredLocation;
     String businessUnit;
     int noticePeriod; // Immediate(0), 15, 30, 45, 60, 90
+    String band;
 
-    // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit
+    // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit, band
 }

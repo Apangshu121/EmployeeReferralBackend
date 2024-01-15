@@ -1,9 +1,10 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
 import com.accolite.EmployeeReferralBackend.models.CandidateDetails;
-import com.accolite.EmployeeReferralBackend.models.GoogleTokenPayload;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
+import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,20 +12,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
 public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
-    private final String googleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
-
     @Autowired
     ReferredCandidateRepository referredCandidateRepository;
+
+    @Autowired
+    SelectedReferredCandidateRepository selectedReferredCandidateRepository;
 
     public ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate) {
 
@@ -60,7 +65,9 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     interviewedPosition(referredCandidate.getInterviewedPosition()).
                     preferredLocation(referredCandidate.getPreferredLocation()).
                     noticePeriod(referredCandidate.getNoticePeriod()).
-                    businessUnit(referredCandidate.getBusinessUnit()).build();
+                    businessUnit(referredCandidate.getBusinessUnit()).
+                    band(referredCandidate.getBand())
+                    .build();
 
 
             // If no duplicacy and email valid, save the new referred candidate
@@ -146,6 +153,91 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, ReferredCandidate updatedReferredCandidate) {
+        try {
+
+            ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
+            // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit, band
+
+            if (updatedReferredCandidate.getCurrentStatus() != null) {
+                referredCandidate.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
+            }
+
+            if (updatedReferredCandidate.getInterviewStatus() != null) {
+                referredCandidate.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
+            }
+
+            if (updatedReferredCandidate.getInterviewedPosition() != null){
+                referredCandidate.setInterviewedPosition(updatedReferredCandidate.getInterviewedPosition());
+            }
+
+            if(updatedReferredCandidate.getBusinessUnit()!=null) {
+                referredCandidate.setBusinessUnit(updatedReferredCandidate.getBusinessUnit());
+            }
+
+            if(updatedReferredCandidate.getBand()!=null) {
+                referredCandidate.setBand(updatedReferredCandidate.getBand().toUpperCase());
+            }
+
+             ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
+
+            Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
+
+            if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
+            {
+
+                String band = referredCandidate.getBand();
+
+                double bonus = calculateBonus(band);
+
+                var selectedReferredCandidate = SelectedReferredCandidate.builder().
+                        name(referredCandidate.getCandidateName()).
+                        panNumber(referredCandidate.getPanNumber()).
+                        dateOfSelection(LocalDate.now()).
+                        interviewedRole(referredCandidate.getInterviewedPosition()).
+                        bonus(bonus).
+                        bonusAllocated(false).
+                        referrerEmail(referredCandidate.getReferrerEmail()).
+                        currentlyInCompany(true).build();
+
+
+                selectedReferredCandidateRepository.save(selectedReferredCandidate);
+            }
+
+            Map<String, Object> responseJson = new HashMap<>();
+            responseJson.put("status","Successfully Updated the details");
+
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    private double calculateBonus(String band) {
+
+        switch (band) {
+            case "B7":
+                return 50000;
+            case "B6":
+                return 75000;
+            case "B5L":
+            case "B5H":
+            case "B4L":
+                return 100000;
+            case "B4H":
+            case "B3":
+            case "B2":
+            case "B1":
+                return 150000;
+            default:
+                return 0; // Default case if the band is not recognized
         }
     }
 }
