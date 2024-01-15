@@ -7,6 +7,8 @@ import com.accolite.EmployeeReferralBackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,33 +24,20 @@ public class UserServiceImpl implements UserService {
 
     private final String googleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
     @Override
-    public ResponseEntity<Map<String, Object>> getDetailsOfUser(String googleToken) {
-        System.out.println(googleToken);
+    public ResponseEntity<Map<String, Object>> getDetailsOfUser() {
+
         try{
 
-            RestTemplate restTemplate = new RestTemplate();
-            String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + googleToken;
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
 
-            ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
+            User user = userRepository.findByEmail(email).orElseThrow();
 
-            if(response.getBody()!=null)
-            {
-                String name = response.getBody().getName();
-                String email = response.getBody().getEmail();
+            Map<String,Object> responseMap = new HashMap<>();
+            responseMap.put("name",user.getName());
+            responseMap.put("role", user.getRole());
 
-                User user = userRepository.findByEmail(email).orElseThrow();
-
-                Map<String,Object> responseMap = new HashMap<>();
-                responseMap.put("name",name);
-                responseMap.put("role", user.getRole());
-
-                return ResponseEntity.ok(responseMap);
-            } else {
-                Map<String, Object> errorMap = new HashMap<>();
-                errorMap.put("status", "error");
-                errorMap.put("message", "Invalid Google token");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-            }
+            return ResponseEntity.ok(responseMap);
         }catch (Exception e){
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");

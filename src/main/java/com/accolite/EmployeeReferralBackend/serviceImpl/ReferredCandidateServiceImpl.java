@@ -1,94 +1,117 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
-import com.accolite.EmployeeReferralBackend.models.GoogleTokenPayload;
+import com.accolite.EmployeeReferralBackend.models.CandidateDetails;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
+import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
-    private final String googleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
-
     @Autowired
     ReferredCandidateRepository referredCandidateRepository;
 
-    public void addReferredCandidate(String googleToken, ReferredCandidate referredCandidate) {
+    @Autowired
+    SelectedReferredCandidateRepository selectedReferredCandidateRepository;
 
-        RestTemplate restTemplate = new RestTemplate();
-        String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + googleToken;
-
-        ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
-        Optional<ReferredCandidate> existingCandidate = referredCandidateRepository.findByPanNumber(referredCandidate.getPanNumber());
-
-        if(response.getBody()==null){
-            throw new IllegalStateException("User email failed");
-        }
-
-        if (existingCandidate.isPresent()) {
-            throw new IllegalStateException("Duplicate PAN number found: " + referredCandidate.getPanNumber());
-        }
-
-        var candidate = ReferredCandidate.builder().
-                dateOfReferral(LocalDateTime.now()).
-                candidateName(referredCandidate.getCandidateName()).
-                referrerEmail(response.getBody().getEmail()).
-                primarySkill(referredCandidate.getPrimarySkill()).
-                candidateEmail(referredCandidate.getCandidateEmail()).
-                experience(referredCandidate.getExperience()).
-                contactNumber(referredCandidate.getContactNumber()).
-                currentStatus(referredCandidate.getCurrentStatus()).
-                panNumber(referredCandidate.getPanNumber()).
-                willingToRelocate(referredCandidate.isWillingToRelocate()).
-                interviewStatus(referredCandidate.getInterviewStatus()).
-                interviewedPosition(referredCandidate.getInterviewedPosition()).
-                currentLocation(referredCandidate.getCurrentLocation()).
-                businessUnit(referredCandidate.getBusinessUnit()).build();
-
-
-        // If no duplicacy and email valid, save the new referred candidate
-        referredCandidateRepository.save(candidate);
-    }
-
-    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String googleToken){
+    public ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate) {
 
         try{
-            RestTemplate restTemplate = new RestTemplate();
-            String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + googleToken;
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
 
-            ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
 
-            if(response.getBody()!=null)
+            if(!isValidPanCard(referredCandidate.getPanNumber(),referredCandidate.getCandidateName()))
             {
-                Optional<List<ReferredCandidate>> referredCandidates = referredCandidateRepository.findByReferrerEmail(response.getBody().getEmail());
-                Map<String,Object> referredCandidatesJson = new HashMap<>();
-
-                if(referredCandidates.isPresent()){
-                    List<ReferredCandidate> referredCandidatesList = referredCandidates.get();
-
-                    referredCandidatesJson.put("referredCandidates",referredCandidatesList);
-                    return ResponseEntity.ok(referredCandidatesJson);
-                }else{
-                    referredCandidatesJson.put("referredCandidates",null);
-                    return ResponseEntity.ok(referredCandidatesJson);
-                }
-            }else{
-                Map<String, Object> errorMap = new HashMap<>();
-                errorMap.put("status", "error");
-                errorMap.put("message", "Invalid Google token");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
+                throw new IllegalStateException("Not a valid Pan Card");
             }
+
+            Optional<ReferredCandidate> existingCandidate = referredCandidateRepository.findByPanNumber(referredCandidate.getPanNumber());
+
+            if (existingCandidate.isPresent()) {
+                throw new IllegalStateException("Duplicate PAN number found: " + referredCandidate.getPanNumber());
+            }
+
+            var candidate = ReferredCandidate.builder().
+                    dateOfReferral(LocalDateTime.now()).
+                    candidateName(referredCandidate.getCandidateName()).
+                    referrerEmail(email).
+                    primarySkill(referredCandidate.getPrimarySkill()).
+                    secondarySkills(referredCandidate.getSecondarySkills()).
+                    candidateEmail(referredCandidate.getCandidateEmail()).
+                    experience(referredCandidate.getExperience()).
+                    contactNumber(referredCandidate.getContactNumber()).
+                    currentStatus(referredCandidate.getCurrentStatus()).
+                    panNumber(referredCandidate.getPanNumber()).
+                    willingToRelocate(referredCandidate.isWillingToRelocate()).
+                    interviewStatus(referredCandidate.getInterviewStatus()).
+                    interviewedPosition(referredCandidate.getInterviewedPosition()).
+                    preferredLocation(referredCandidate.getPreferredLocation()).
+                    noticePeriod(referredCandidate.getNoticePeriod()).
+                    businessUnit(referredCandidate.getBusinessUnit()).
+                    band(referredCandidate.getBand())
+                    .build();
+
+
+            // If no duplicacy and email valid, save the new referred candidate
+            referredCandidateRepository.save(candidate);
+
+            Map<String,Object> responseMap = new HashMap<>();
+            responseMap.put("message","Referred Candidate added Successfully");
+
+            return ResponseEntity.ok(responseMap);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    public static boolean isValidPanCard(String panNumber, String personName) {
+
+        String[] nameParts = personName.split("\\s+");
+        String surname = nameParts[nameParts.length - 1].toUpperCase();
+
+        System.out.println(surname);
+        String panPattern = String.format("[A-Z]{3}P%c[0-9]{4}[A-Z]{1}", surname.charAt(0));
+
+        Pattern pattern = Pattern.compile(panPattern);
+
+        Matcher matcher = pattern.matcher(panNumber);
+
+        return matcher.matches();
+    }
+
+    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(){
+
+        try{
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
+
+            List<CandidateDetails> referredCandidates = referredCandidateRepository.findAllCandidatesOfReferrer(email);
+            Map<String,Object> referredCandidatesJson = new HashMap<>();
+
+            referredCandidatesJson.put("referredCandidates",referredCandidates);
+            return ResponseEntity.ok(referredCandidatesJson);
+
         }catch(Exception e){
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
@@ -102,7 +125,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
         try{
             Map<String,Object> responseJson = new HashMap<>();
-            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAll();
+                List<CandidateDetails> allReferredCandidates = referredCandidateRepository.findAllCandidates();
 
             responseJson.put("candidates",allReferredCandidates);
 
@@ -112,6 +135,109 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> getCandidateById(int id) {
+
+        try{
+            Map<String, Object> responseJson = new HashMap<>();
+            Optional<ReferredCandidate> referredCandidate = referredCandidateRepository.findById(id);
+
+            referredCandidate.ifPresent(candidate -> responseJson.put("candidate", candidate));
+
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, ReferredCandidate updatedReferredCandidate) {
+        try {
+
+            ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
+            // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit, band
+
+            if (updatedReferredCandidate.getCurrentStatus() != null) {
+                referredCandidate.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
+            }
+
+            if (updatedReferredCandidate.getInterviewStatus() != null) {
+                referredCandidate.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
+            }
+
+            if (updatedReferredCandidate.getInterviewedPosition() != null){
+                referredCandidate.setInterviewedPosition(updatedReferredCandidate.getInterviewedPosition());
+            }
+
+            if(updatedReferredCandidate.getBusinessUnit()!=null) {
+                referredCandidate.setBusinessUnit(updatedReferredCandidate.getBusinessUnit());
+            }
+
+            if(updatedReferredCandidate.getBand()!=null) {
+                referredCandidate.setBand(updatedReferredCandidate.getBand().toUpperCase());
+            }
+
+             ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
+
+            Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
+
+            if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
+            {
+
+                String band = referredCandidate.getBand();
+
+                double bonus = calculateBonus(band);
+
+                var selectedReferredCandidate = SelectedReferredCandidate.builder().
+                        name(referredCandidate.getCandidateName()).
+                        panNumber(referredCandidate.getPanNumber()).
+                        dateOfSelection(LocalDate.now()).
+                        interviewedRole(referredCandidate.getInterviewedPosition()).
+                        bonus(bonus).
+                        bonusAllocated(false).
+                        referrerEmail(referredCandidate.getReferrerEmail()).
+                        currentlyInCompany(true).build();
+
+
+                selectedReferredCandidateRepository.save(selectedReferredCandidate);
+            }
+
+            Map<String, Object> responseJson = new HashMap<>();
+            responseJson.put("status","Successfully Updated the details");
+
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    private double calculateBonus(String band) {
+
+        switch (band) {
+            case "B7":
+                return 50000;
+            case "B6":
+                return 75000;
+            case "B5L":
+            case "B5H":
+            case "B4L":
+                return 100000;
+            case "B4H":
+            case "B3":
+            case "B2":
+            case "B1":
+                return 150000;
+            default:
+                return 0; // Default case if the band is not recognized
         }
     }
 }

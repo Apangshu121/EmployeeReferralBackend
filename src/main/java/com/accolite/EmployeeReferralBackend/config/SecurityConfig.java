@@ -1,47 +1,57 @@
 package com.accolite.EmployeeReferralBackend.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @EnableWebSecurity
-@RequiredArgsConstructor
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class SecurityConfig{
+public class SecurityConfig {
 
-    public static final String[] WHITE_LIST_URL = {"/LoginWithGoogle"};
-    public static final String[] PROTECTED_LIST_URL = {};
+    @Autowired
+    JwtAuthenticationFilter jwtAuthFilter;
+
+    @Autowired
+    AuthenticationProvider authenticationProvider;
+
+    private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo"};
+    private static final String[] AUTHENTICATED_LIST_URL = {"/getUserDetails", "/api/referredCandidates/add","/api/referredCandidates/getAllCandidatesOfUser"};
+    private static final String[] RECRUITER_LIST_URL = {"/api/referredCandidates/getAll",
+            "/api/referredCandidates/get/**",
+            "/api/referredCandidates/update/**",
+            "/api/selectedReferredCandidates/getAll",
+            "/api/selectedReferredCandidates/get/**",
+            "/api/selectedReferredCandidates/update/**"
+    };
+
+    private static final String[] ADMIN_LIST_URL = {};
+
+    private static final String[] BU_HEAD_LIST_URL = {};
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http.cors(cors -> cors.disable()).csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(req -> req.requestMatchers(WHITE_LIST_URL)
+                .authorizeHttpRequests(req->req.requestMatchers(WHITE_LIST_URL)
                         .permitAll()
-                        .requestMatchers(PROTECTED_LIST_URL)
-                        .authenticated().anyRequest().permitAll())
+                        .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","BU_HEAD","ADMIN")
+                        .requestMatchers(RECRUITER_LIST_URL).hasAuthority("RECRUITER")
+                        .requestMatchers(ADMIN_LIST_URL).hasAuthority("ADMIN")
+                        .requestMatchers(BU_HEAD_LIST_URL).hasAuthority("BU_HEAD").anyRequest()
+                        .authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
-                .httpBasic(Customizer.withDefaults());
-
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-
 }

@@ -7,5 +7,5 @@ import java.util.Map;
 
 @Service
 public interface UserService {
-   ResponseEntity<Map<String,Object>> getDetailsOfUser(String googleToken);
+   ResponseEntity<Map<String,Object>> getDetailsOfUser();
 }
