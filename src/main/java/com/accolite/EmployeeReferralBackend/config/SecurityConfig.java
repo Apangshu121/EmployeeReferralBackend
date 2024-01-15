@@ -30,7 +30,11 @@ public class SecurityConfig {
             "/api/referredCandidates/update/**",
             "/api/selectedReferredCandidates/getAll",
             "/api/selectedReferredCandidates/get/**",
-            "/api/selectedReferredCandidates/update/**"
+            "/api/selectedReferredCandidates/update/**",
+            "/api/referredCandidates/filterByExperience/**",
+            "/api/referredCandidates/filterByPreferredLocation/**",
+            "/api/referredCandidates/filterByNoticePeriod/**"
+
     };
 
     private static final String[] ADMIN_LIST_URL = {"/admin/users/modify/**","/admin/users/all"};

@@ -13,12 +13,20 @@ import java.util.Optional;
 @Repository
 public interface ReferredCandidateRepository extends JpaRepository<ReferredCandidate, Integer> {
     Optional<ReferredCandidate> findByPanNumber(String panNumber);
+    List<ReferredCandidate> findByExperienceGreaterThanEqual(int experience);
+
+    List<ReferredCandidate> findByPreferredLocation(String preferredLocation);
+
+    @Query("SELECT r FROM ReferredCandidate r WHERE r.noticePeriod <= :noticePeriod")
+    List<ReferredCandidate> findByNoticePeriodLessThanOrEqual(int noticePeriod);
+
 
     @Query("SELECT new com.accolite.EmployeeReferralBackend.models.CandidateDetails(r.candidateName, r.dateOfReferral, r.interviewStatus, r.interviewedPosition) FROM ReferredCandidate r")
     List<CandidateDetails> findAllCandidates();
 
     @Query("SELECT new com.accolite.EmployeeReferralBackend.models.CandidateDetails(r.candidateName, r.dateOfReferral, r.interviewStatus, r.interviewedPosition) FROM ReferredCandidate r WHERE r.referrerEmail = :emailId")
     List<CandidateDetails> findAllCandidatesOfReferrer(@Param("emailId") String emailId);
+
 }
 
 

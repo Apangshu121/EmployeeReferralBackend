@@ -15,10 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -183,12 +180,24 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 referredCandidate.setBand(updatedReferredCandidate.getBand().toUpperCase());
             }
 
-             ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
+            ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
+
+            System.out.println(savedReferredCandidate);
 
             Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
 
+//       System.out.println(savedReferredCandidate.getCurrentStatus().equals("SELECT"));
+
             if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
             {
+
+                if(referredCandidate.getBand() == null)
+                {
+                    Map<String, Object> errorMap = new HashMap<>();
+                    errorMap.put("status", "error");
+                    errorMap.put("message", "Band not set");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+                }
 
                 String band = referredCandidate.getBand();
 
@@ -204,6 +213,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                         referrerEmail(referredCandidate.getReferrerEmail()).
                         currentlyInCompany(true).build();
 
+                System.out.println(selectedReferredCandidate);
 
                 selectedReferredCandidateRepository.save(selectedReferredCandidate);
             }
@@ -219,7 +229,41 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+    @Override
+    public ResponseEntity<List<ReferredCandidate>> filterCandidatesByExperience(int experience) {
+        try {
+            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
+            return ResponseEntity.ok(filteredCandidates);
+        } catch (Exception e) {
+            // Log the exception or handle it according to your application's needs
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList()); // or any other appropriate response
+        }
+    }
+    @Override
+    public ResponseEntity<List<ReferredCandidate>> filterCandidatesByPreferredLocation(String preferredLocation) {
+        try {
+            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
+            return ResponseEntity.ok(filteredCandidates);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
 
+    @Override
+    public ResponseEntity<List<ReferredCandidate>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriod) {
+        try {
+            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLessThanOrEqual(noticePeriod);
+            return ResponseEntity.ok(filteredCandidates);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
     private double calculateBonus(String band) {
 
         switch (band) {
