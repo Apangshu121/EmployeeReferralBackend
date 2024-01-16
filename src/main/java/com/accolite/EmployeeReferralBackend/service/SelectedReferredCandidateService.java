@@ -14,4 +14,6 @@ public interface SelectedReferredCandidateService {
     ResponseEntity<Map<String, Object>> getSelectedReferredCandidateById(Long id);
 
     ResponseEntity<Map<String, Object>> updateReferredSelectedCandidatesById(Long id, SelectedReferredCandidate selectedReferredCandidate);
+
+    ResponseEntity<Map<String,Object>> allocateBonusToUser(Long candidateId);
 }

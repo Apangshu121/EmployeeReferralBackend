@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/users")
@@ -14,26 +15,22 @@ public class AdminController {
 
     private final AdminService adminService;
 
+
+
+
     @Autowired
     public AdminController(AdminService adminService) {
         this.adminService = adminService;
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = adminService.getAllUsers();
-        return ResponseEntity.ok(users);
+    public ResponseEntity<Map<String, Object>> getAllUsers() {
+        return adminService.getAllUsers();
     }
 
-    @PutMapping("/modify/{userId}")
-    public ResponseEntity<String> modifyOrCreateUser(@PathVariable Long userId, @RequestBody User modifiedUser) {
-        boolean success = adminService.modifyOrCreateUser(userId, modifiedUser);
-        if (success) {
-            return ResponseEntity.ok("User modified or created successfully");
-        } else {
-            return ResponseEntity.badRequest().body("User modification or creation failed");
-        }
+    @PutMapping("/modify/{userEmail}")
+    public ResponseEntity<Map<String,Object>> modifyOrCreateUser(@PathVariable String userEmail, @RequestBody User modifiedUser) {
+        return adminService.modifyUser(userEmail, modifiedUser);
+
     }
-
-
 }
