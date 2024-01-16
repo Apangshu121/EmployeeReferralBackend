@@ -7,9 +7,7 @@ import opennlp.tools.tokenize.SimpleTokenizer;
 import opennlp.tools.tokenize.Tokenizer;
 import opennlp.tools.util.Span;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,45 +20,62 @@ public class NlpProcessor {
         TokenNameFinderModel nameModel = loadModel(MODEL_PATH);
         NameFinderME nameFinder = new NameFinderME(nameModel);
 
-        Tokenizer tokenizer = SimpleTokenizer.INSTANCE;
-        String[] tokens = tokenizer.tokenize(text);
+        // Use BufferedReader to read lines, skipping empty lines
+        BufferedReader reader = new BufferedReader(new StringReader(text));
+        String firstLine = null;
 
-        Span[] nameSpans = nameFinder.find(tokens);
-        String name = "";
-
-        if (nameSpans.length > 0) {
-            // Concatenate only the tokens identified as names
-            StringBuilder nameBuilder = new StringBuilder();
-            for (Span span : nameSpans) {
-                for (int i = span.getStart(); i < span.getEnd(); i++) {
-                    nameBuilder.append(tokens[i]).append(" ");
-                }
-            }
-            name = nameBuilder.toString().trim();
-        } else {
-            // Fallback approach: Use a regex to capture common name patterns
-            name = extractNameUsingRegex(text);
+        // Read lines until a non-empty line is found
+        while ((firstLine = reader.readLine()) != null && firstLine.trim().isEmpty()) {
+            // Continue reading until a non-empty line is found
         }
 
-        // Extract email using regex pattern
-        Matcher emailMatcher = EMAIL_PATTERN.matcher(text);
-        String email = emailMatcher.find() ? emailMatcher.group() : "";
+        // Check if the first line is not empty
+        if (firstLine != null) {
+            // Tokenize the first line
+            Tokenizer tokenizer = SimpleTokenizer.INSTANCE;
+            String[] tokens = tokenizer.tokenize(firstLine);
 
-        // Extract phone number using a simple pattern
-        String phonePattern = "\\b\\d{10}\\b";
-        Pattern phonePatternRegex = Pattern.compile(phonePattern);
-        Matcher phoneMatcher = phonePatternRegex.matcher(text);
-        String phone = phoneMatcher.find() ? phoneMatcher.group() : "";
+            Span[] nameSpans = nameFinder.find(tokens);
+            String name = "";
 
-        // Extract experience using a simple pattern
-        String experiencePattern = "\\b\\d+\\s?years?\\b";
-        Pattern experiencePatternRegex = Pattern.compile(experiencePattern);
-        Matcher experienceMatcher = experiencePatternRegex.matcher(text);
-        String experience = experienceMatcher.find() ? experienceMatcher.group() : "0";
+            if (nameSpans.length > 0) {
+                // Concatenate only the tokens identified as names
+                StringBuilder nameBuilder = new StringBuilder();
+                for (Span span : nameSpans) {
+                    for (int i = span.getStart(); i < span.getEnd(); i++) {
+                        nameBuilder.append(tokens[i]).append(" ");
+                    }
+                }
+                name = nameBuilder.toString().trim();
+            } else {
+                // Fallback approach: Use a regex to capture common name patterns
+                name = extractNameUsingRegex(firstLine);
+            }
 
-        String primarySkill = extractPrimarySkill(text);
+            // Extract email using regex pattern
+            Matcher emailMatcher = EMAIL_PATTERN.matcher(text);
+            String email = emailMatcher.find() ? emailMatcher.group() : "";
 
-        return new ResumeData(name, email, phone, experience, primarySkill);
+            // Extract phone number using a simple pattern
+            String phonePattern = "\\b\\d{10}\\b";
+            Pattern phonePatternRegex = Pattern.compile(phonePattern);
+            Matcher phoneMatcher = phonePatternRegex.matcher(text);
+            String phone = phoneMatcher.find() ? phoneMatcher.group() : "";
+
+            // Extract experience using a simple pattern
+            String experiencePattern = "\\b\\d+\\s?year(s)?\\b";
+
+            Pattern experiencePatternRegex = Pattern.compile(experiencePattern);
+            Matcher experienceMatcher = experiencePatternRegex.matcher(text);
+            String experience = experienceMatcher.find() ? experienceMatcher.group() : "0";
+
+            String primarySkill = extractPrimarySkill(text);
+
+            return new ResumeData(name, email, phone, experience, primarySkill);
+        } else {
+            // Return empty ResumeData or handle accordingly if no non-empty lines are found
+            return new ResumeData("", "", "", "0", "");
+        }
     }
 //    private static String extractNameFallback(String[] tokens) {
 //        // Fallback approach: Assuming the name is in the first two tokens
