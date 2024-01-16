@@ -30,9 +30,21 @@ public class ReferredCandidateController {
         return referredCandidateService.getReferredCandidatesOfUser();
     }
 
+//    @GetMapping("/getAll")
+//    public ResponseEntity<Map<String,Object>> getAllCandidates(){
+//
+//        return referredCandidateService.getAllCandidates();
+//    }
+
     @GetMapping("/getAll")
-    public ResponseEntity<Map<String,Object>> getAllCandidates(){
-        return referredCandidateService.getAllCandidates();
+    public ResponseEntity<Map<String,Object>> getAllCandidates(@RequestParam(value = "keyword", required = false) String keyword) {
+        if (keyword != null && !keyword.isEmpty()) {
+            // If a search keyword is provided, return the products that match the name
+            return referredCandidateService.searchCandidates(keyword);
+        } else {
+            // If no search keyword, return all products
+            return referredCandidateService.getAllCandidates();
+        }
     }
 
     @GetMapping("/get/{id}")
