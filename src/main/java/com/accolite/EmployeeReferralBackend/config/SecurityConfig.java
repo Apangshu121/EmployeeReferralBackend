@@ -27,6 +27,7 @@ public class SecurityConfig {
     private static final String[] AUTHENTICATED_LIST_URL = {"/getUserDetails", "/api/referredCandidates/add","/api/referredCandidates/getAllCandidatesOfUser"};
     private static final String[] RECRUITER_LIST_URL = {"/api/referredCandidates/getAll",
             "/api/referredCandidates/get/**",
+            "/api/selectedReferredCandidates/allocateBonus/**",
             "/api/referredCandidates/update/**",
             "/api/selectedReferredCandidates/getAll",
             "/api/selectedReferredCandidates/get/**",

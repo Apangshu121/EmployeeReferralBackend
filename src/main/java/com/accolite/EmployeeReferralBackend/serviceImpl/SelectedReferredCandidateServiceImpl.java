@@ -2,7 +2,9 @@ package com.accolite.EmployeeReferralBackend.serviceImpl;
 
 import com.accolite.EmployeeReferralBackend.models.SelectedCandidateDetails;
 import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.User;
 import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
+import com.accolite.EmployeeReferralBackend.repository.UserRepository;
 import com.accolite.EmployeeReferralBackend.service.SelectedReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,8 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
     @Autowired
     SelectedReferredCandidateRepository selectedReferredCandidateRepository;
 
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public ResponseEntity<Map<String, Object>> getAllSelectedReferredCandidates() {
@@ -49,6 +53,44 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
 
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String,Object>> allocateBonusToUser(Long candidateId)
+    {
+        try {
+            SelectedReferredCandidate candidate = selectedReferredCandidateRepository.findById(candidateId).orElseThrow();
+
+            String referrerEmail = candidate.getReferrerEmail();
+            User user = userRepository.findByEmail(referrerEmail).orElseThrow();
+
+            if (user != null && !candidate.isBonusAllocated()) {
+                double bonusAmount = candidate.getBonus();
+                user.setTotalBonus(user.getTotalBonus() + bonusAmount);
+                userRepository.save(user);
+
+
+                candidate.setBonusAllocated(true);
+                selectedReferredCandidateRepository.save(candidate);
+
+                Map<String, Object> responseJson = new HashMap<>();
+
+                responseJson.put("Message", "Bonus Allocated");
+
+                return ResponseEntity.ok(responseJson);
+            }else{
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "User does not exist or bonus already exists");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
+            }
+
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");

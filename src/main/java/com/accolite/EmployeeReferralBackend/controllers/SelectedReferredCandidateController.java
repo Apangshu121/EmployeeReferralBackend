@@ -26,6 +26,13 @@ public class SelectedReferredCandidateController {
     @GetMapping("/get/{id}")
     public ResponseEntity<Map<String,Object>> getSelectedReferredCandidateById(@PathVariable Long id){ return selectedReferredCandidateService.getSelectedReferredCandidateById(id);}
 
+    @PostMapping("/allocateBonus/{candidateId}")
+    public ResponseEntity<Map<String,Object>> allocateBonusToUser(@PathVariable Long candidateId) {
+      return selectedReferredCandidateService.allocateBonusToUser(candidateId);
+
+
+    }
+
     @PutMapping("/update/{id}")
     public ResponseEntity<Map<String,Object>> updateReferredSelectedCandidatesById(@PathVariable Long id, @RequestBody SelectedReferredCandidate selectedReferredCandidate){ return selectedReferredCandidateService.updateReferredSelectedCandidatesById(id, selectedReferredCandidate);}
 }
