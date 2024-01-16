@@ -1,6 +1,5 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
-import com.accolite.EmployeeReferralBackend.models.SelectedCandidateDetails;
 import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
 import com.accolite.EmployeeReferralBackend.models.User;
 import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
@@ -28,7 +27,7 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
     @Override
     public ResponseEntity<Map<String, Object>> getAllSelectedReferredCandidates() {
         try {
-            List<SelectedCandidateDetails> selectedReferredCandidateList = selectedReferredCandidateRepository.findAllSelectedCandidates();
+            List<SelectedReferredCandidate> selectedReferredCandidateList = selectedReferredCandidateRepository.findAll();
 
             Map<String, Object> responseJson = new HashMap<>();
 

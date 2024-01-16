@@ -1,13 +1,14 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
-import com.accolite.EmployeeReferralBackend.models.CandidateDetails;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
 import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
@@ -360,6 +361,36 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> searchCandidates(String keyword) {
+        try{
+            Specification<ReferredCandidate> specification = (root, query, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+
+                if (keyword != null && !keyword.isEmpty()) {
+                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("candidateName")), "%" + keyword.toLowerCase() + "%"));
+                }
+
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            };
+
+            List<ReferredCandidate> searchedCandidatesList = referredCandidateRepository.findAll(specification);
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Searched Candidates", searchedCandidatesList);
+
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+
 
     private String getTemplateOfReferrerForCandidateForCandidateStatus(String currentStatus, String candidateName) {
         String greeting = "Hello " + "Referrer" + ",\n\n";
