@@ -23,18 +23,11 @@ public class ReferredCandidateController {
 
     }
 
-    // Modify
     @GetMapping("/getAllCandidatesOfUser")
     public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser()
     {
         return referredCandidateService.getReferredCandidatesOfUser();
     }
-
-//    @GetMapping("/getAll")
-//    public ResponseEntity<Map<String,Object>> getAllCandidates(){
-//
-//        return referredCandidateService.getAllCandidates();
-//    }
 
     @GetMapping("/getAll")
     public ResponseEntity<Map<String,Object>> getAllCandidates(@RequestParam(value = "keyword", required = false) String keyword) {

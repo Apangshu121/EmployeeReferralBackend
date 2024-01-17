@@ -6,6 +6,7 @@ import com.accolite.EmployeeReferralBackend.utils.NlpProcessor;
 import com.accolite.EmployeeReferralBackend.utils.PdfUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -28,28 +28,25 @@ public class PdfController {
     @PostMapping("/extractInfo")
     public ResponseEntity<String> extractInfo(@RequestParam("pdfFile") MultipartFile pdfFile) {
         try {
-
             List<String> blacklistedCompanies = googleSheetsService.readSheet();
-//            for (String company:blacklistedCompanies)
-//            {
-//                System.out.println(company+ " ");
-//            }
+//
+            blacklistedCompanies.remove(0);
             String pdfText = PdfUtils.extractTextFromPdf(pdfFile);
-            Map<String, Object>  response = NlpProcessor.extractResumeData(pdfText,blacklistedCompanies);
+            System.out.println(pdfText);
+            for(String blacklistCompany:blacklistedCompanies)
+            {
+                if(pdfText.trim().toLowerCase().contains(blacklistCompany.trim().toLowerCase())){
+                    String errorResponse = "{\"error\":\"The candidate cannot be referred\"}";
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+                }
+            }
+
+            ResumeData resumeData = NlpProcessor.extractResumeData(pdfText);
 
             // Convert ResumeData to JSON
             ObjectMapper objectMapper = new ObjectMapper();
-           // String jsonResumeData = objectMapper.writeValueAsString(resumeData);
-            String jsonResumeData;
-
-            if(response.containsKey("resumeData")) {
-
-                System.out.println(response.get("resumeData"));
-                jsonResumeData = objectMapper.writeValueAsString(response.get("resumeData"));
-            }else{
-                jsonResumeData = objectMapper.writeValueAsString(response.get("message"));
-            }
-
+            String jsonResumeData = objectMapper.writeValueAsString(resumeData);
+            System.out.println(jsonResumeData);
             return ResponseEntity.ok(jsonResumeData);
         } catch (IOException e) {
             e.printStackTrace();

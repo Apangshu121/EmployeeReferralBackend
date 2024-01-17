@@ -15,9 +15,6 @@ public class AdminController {
 
     private final AdminService adminService;
 
-
-
-
     @Autowired
     public AdminController(AdminService adminService) {
         this.adminService = adminService;

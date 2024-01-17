@@ -19,15 +19,13 @@ public class NlpProcessor {
     private static final Pattern PRIMARY_SKILL_PATTERN = Pattern.compile("\\bPrimary\\s*Skill\\s*:\\s*([A-Za-z+]+)\\b");
     private static final String MODEL_PATH = "en-ner-person.bin";
 
-    public static Map<String, Object> extractResumeData(String text , List<String> blacklistedCompanies) throws IOException {
+    public static ResumeData extractResumeData(String text) throws IOException {
         TokenNameFinderModel nameModel = loadModel(MODEL_PATH);
         NameFinderME nameFinder = new NameFinderME(nameModel);
 
         // Use BufferedReader to read lines, skipping empty lines
         BufferedReader reader = new BufferedReader(new StringReader(text));
         String firstLine = null;
-
-        checkBlacklistedCompanies(text, blacklistedCompanies);
 
         // Read lines until a non-empty line is found
         while ((firstLine = reader.readLine()) != null && firstLine.trim().isEmpty()) {
@@ -77,37 +75,13 @@ public class NlpProcessor {
 
             ResumeData resumeData= new ResumeData(name, email, phone, experience, primarySkill);
 
-            Map<String,Object> responseJson = new HashMap<>();
-
-            responseJson.put("resumeData", responseJson);
-
-            return responseJson;
+            return new ResumeData(name, email, phone, experience, primarySkill);
         } else {
             // Return empty ResumeData or handle accordingly if no non-empty lines are found
-            ResumeData resumeData = new ResumeData("", "", "", "0", "");
-
-            Map<String,Object> responseJson = new HashMap<>();
-
-            responseJson.put("resumeData", responseJson);
-
-            return responseJson;
+            return new ResumeData("", "", "", "0", "");
         }
     }
 
-    private static void checkBlacklistedCompanies(String text, List<String> blacklistedCompanies)  {
-        for (String company : blacklistedCompanies) {
-            if (text.contains(company)) {
-                Map<String, Object> errorMap = new HashMap<>();
-                errorMap.put("status", "error");
-                errorMap.put("message", "This candidate cannot be referred");
-            }
-        }
-    }
-
-    //    private static String extractNameFallback(String[] tokens) {
-//        // Fallback approach: Assuming the name is in the first two tokens
-//        return tokens.length >= 2 ? String.join(" ", Arrays.copyOfRange(tokens, 0, 2)) : "";
-//    }
     private static String extractPrimarySkill(String text) {
         Matcher skillMatcher = PRIMARY_SKILL_PATTERN.matcher(text);
         return skillMatcher.find() ? skillMatcher.group(1) : "";
