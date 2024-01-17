@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -29,16 +30,25 @@ public class PdfController {
         try {
 
             List<String> blacklistedCompanies = googleSheetsService.readSheet();
-            for (String company:blacklistedCompanies)
-            {
-                System.out.println(company+ " ");
-            }
+//            for (String company:blacklistedCompanies)
+//            {
+//                System.out.println(company+ " ");
+//            }
             String pdfText = PdfUtils.extractTextFromPdf(pdfFile);
-            ResumeData resumeData = NlpProcessor.extractResumeData(pdfText);
+            Map<String, Object>  response = NlpProcessor.extractResumeData(pdfText,blacklistedCompanies);
 
             // Convert ResumeData to JSON
             ObjectMapper objectMapper = new ObjectMapper();
-            String jsonResumeData = objectMapper.writeValueAsString(resumeData);
+           // String jsonResumeData = objectMapper.writeValueAsString(resumeData);
+            String jsonResumeData;
+
+            if(response.containsKey("resumeData")) {
+
+                System.out.println(response.get("resumeData"));
+                jsonResumeData = objectMapper.writeValueAsString(response.get("resumeData"));
+            }else{
+                jsonResumeData = objectMapper.writeValueAsString(response.get("message"));
+            }
 
             return ResponseEntity.ok(jsonResumeData);
         } catch (IOException e) {
