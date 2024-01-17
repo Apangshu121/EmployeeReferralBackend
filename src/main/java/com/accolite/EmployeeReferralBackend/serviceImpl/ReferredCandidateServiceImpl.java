@@ -6,7 +6,9 @@ import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateHistoryRepository;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
+import com.accolite.EmployeeReferralBackend.service.GoogleSheetsService;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
+import com.accolite.EmployeeReferralBackend.utils.GoogleSheetsProperties;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +35,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     @Autowired
     private ReferredCandidateHistoryRepository referredCandidateHistoryRepository;
 
-    // ... Other autowired repositories ...
     @Autowired
     SelectedReferredCandidateRepository selectedReferredCandidateRepository;
 
