@@ -60,25 +60,28 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 throw new IllegalStateException("Duplicate PAN number found: " + referredCandidate.getPanNumber());
             }
 
-            var candidate = ReferredCandidate.builder().
-                    dateOfReferral(LocalDateTime.now()).
-                    candidateName(referredCandidate.getCandidateName()).
-                    referrerEmail(email).
-                    primarySkill(referredCandidate.getPrimarySkill()).
-                    secondarySkills(referredCandidate.getSecondarySkills()).
-                    candidateEmail(referredCandidate.getCandidateEmail()).
-                    experience(referredCandidate.getExperience()).
-                    contactNumber(referredCandidate.getContactNumber()).
-                    currentStatus(referredCandidate.getCurrentStatus()).
-                    panNumber(referredCandidate.getPanNumber()).
-                    willingToRelocate(referredCandidate.isWillingToRelocate()).
-                    interviewStatus(referredCandidate.getInterviewStatus()).
-                    interviewedPosition(referredCandidate.getInterviewedPosition()).
-                    preferredLocation(referredCandidate.getPreferredLocation()).
-                    noticePeriod(referredCandidate.getNoticePeriod()).
-                    businessUnit(referredCandidate.getBusinessUnit()).
-                    band(referredCandidate.getBand())
+            var candidate = ReferredCandidate.builder()
+                    .dateOfReferral(LocalDateTime.now())
+                    .referrerEmail(email)
+                    .primarySkill(referredCandidate.getPrimarySkill())
+                    .secondarySkills(referredCandidate.getSecondarySkills())
+                    .candidateName(referredCandidate.getCandidateName())
+                    .experience(referredCandidate.getExperience())
+                    .contactNumber(referredCandidate.getContactNumber())
+                    .candidateEmail(referredCandidate.getCandidateEmail())
+                    .currentStatus(referredCandidate.getCurrentStatus())
+                    .panNumber(referredCandidate.getPanNumber())
+                    .willingToRelocate(referredCandidate.isWillingToRelocate())
+                    .interviewStatus(referredCandidate.getInterviewStatus())
+                    .interviewedPosition(referredCandidate.getInterviewedPosition())
+                    .preferredLocation(referredCandidate.getPreferredLocation())
+                    .businessUnit(referredCandidate.getBusinessUnit())
+                    .noticePeriod(referredCandidate.getNoticePeriod())
+                    .band(referredCandidate.getBand())
+                    .profileSource(referredCandidate.getProfileSource()) // Include the new field
+                    .vouch(referredCandidate.isVouch()) // Include the new field
                     .build();
+
 
 
             // If no duplicacy and email valid, save the new referred candidate
