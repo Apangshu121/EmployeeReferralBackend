@@ -47,6 +47,10 @@ public class ReferredCandidate{
     int noticePeriod; // Immediate(0), 15, 30, 45, 60, 90
     String band;
 
+    String profileSource;
+
+    boolean vouch;
+
     @OneToMany(mappedBy = "referredCandidate", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Set<ReferredCandidateHistory> referredCandidateHistory;
