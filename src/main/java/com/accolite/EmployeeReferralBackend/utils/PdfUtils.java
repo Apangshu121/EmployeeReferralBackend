@@ -13,7 +13,11 @@ public class PdfUtils {
         try (InputStream inputStream = pdfFile.getInputStream()) {
             PDDocument document = PDDocument.load(inputStream);
             PDFTextStripper pdfTextStripper = new PDFTextStripper();
-            return pdfTextStripper.getText(document);
+            String pdfText = pdfTextStripper.getText(document);
+
+            document.close();
+
+            return pdfText;
         }
     }
 }
