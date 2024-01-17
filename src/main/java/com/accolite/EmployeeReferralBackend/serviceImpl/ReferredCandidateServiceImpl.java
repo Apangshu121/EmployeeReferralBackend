@@ -1,6 +1,5 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
-import com.accolite.EmployeeReferralBackend.models.CandidateDetails;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidateHistory;
 import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
@@ -8,8 +7,10 @@ import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateHistoryR
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
@@ -209,39 +210,42 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
 
-            System.out.println(savedReferredCandidate);
 
-            Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
-
-
-            if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
-            {
-
-                if(referredCandidate.getBand() == null)
+            try{
+                if(savedReferredCandidate.getCurrentStatus().equals("SELECT"))
                 {
-                    Map<String, Object> errorMap = new HashMap<>();
-                    errorMap.put("status", "error");
-                    errorMap.put("message", "Band not set");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+
+                    if(referredCandidate.getBand() == null)
+                    {
+                        Map<String, Object> errorMap = new HashMap<>();
+                        errorMap.put("status", "error");
+                        errorMap.put("message", "Band not set");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+                    }
+
+                    String band = referredCandidate.getBand();
+
+                    double bonus = calculateBonus(band);
+
+                    var selectedReferredCandidate = SelectedReferredCandidate.builder().
+                            name(referredCandidate.getCandidateName()).
+                            dateOfSelection(LocalDate.now()).
+                            interviewedRole(referredCandidate.getInterviewedPosition()).
+                            bonus(bonus).
+                            bonusAllocated(false).
+                            referrerEmail(referredCandidate.getReferrerEmail()).
+                            referredCandidate(savedReferredCandidate).
+                            currentlyInCompany(true).build();
+
+                    System.out.println(selectedReferredCandidate);
+
+                    selectedReferredCandidateRepository.save(selectedReferredCandidate);
                 }
-
-                String band = referredCandidate.getBand();
-
-                double bonus = calculateBonus(band);
-
-                var selectedReferredCandidate = SelectedReferredCandidate.builder().
-                        name(referredCandidate.getCandidateName()).
-                        panNumber(referredCandidate.getPanNumber()).
-                        dateOfSelection(LocalDate.now()).
-                        interviewedRole(referredCandidate.getInterviewedPosition()).
-                        bonus(bonus).
-                        bonusAllocated(false).
-                        referrerEmail(referredCandidate.getReferrerEmail()).
-                        currentlyInCompany(true).build();
-
-                System.out.println(selectedReferredCandidate);
-
-                selectedReferredCandidateRepository.save(selectedReferredCandidate);
+            }catch (Exception e){
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "Candidate current status is already set to SELECT");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
             }
 
             Map<String, Object> responseJson = new HashMap<>();
@@ -377,6 +381,36 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> searchCandidates(String keyword) {
+        try{
+            Specification<ReferredCandidate> specification = (root, query, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+
+                if (keyword != null && !keyword.isEmpty()) {
+                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("candidateName")), "%" + keyword.toLowerCase() + "%"));
+                }
+
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            };
+
+            List<ReferredCandidate> searchedCandidatesList = referredCandidateRepository.findAll(specification);
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Searched Candidates", searchedCandidatesList);
+
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+
 
     private String getTemplateOfReferrerForCandidateForCandidateStatus(String currentStatus, String candidateName) {
         String greeting = "Hello " + "Referrer" + ",\n\n";
