@@ -1,9 +1,6 @@
 package com.accolite.EmployeeReferralBackend.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,8 +21,6 @@ public class SelectedReferredCandidate {
 
     String name;
 
-    String panNumber;
-
     LocalDate dateOfSelection;
 
     LocalDate dateOfJoining;
@@ -40,5 +35,8 @@ public class SelectedReferredCandidate {
 
     boolean bonusAllocated;
 
+    @OneToOne
+    @JoinColumn(name = "referred_candidate_id", unique = true)
+    private ReferredCandidate referredCandidate;
     // updated by dateOfJoining, bonusAllocated, currentlyInCompany.
 }
