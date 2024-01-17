@@ -1,9 +1,12 @@
 package com.accolite.EmployeeReferralBackend.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,6 +46,10 @@ public class ReferredCandidate{
     String businessUnit;
     int noticePeriod; // Immediate(0), 15, 30, 45, 60, 90
     String band;
+
+    @OneToMany(mappedBy = "referredCandidate", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Set<ReferredCandidateHistory> referredCandidateHistory;
 
     // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit, band
 }

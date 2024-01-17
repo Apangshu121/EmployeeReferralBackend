@@ -1,7 +1,9 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.ReferredCandidateHistory;
 import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
+import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateHistoryRepository;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
@@ -28,6 +30,10 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     @Autowired
     ReferredCandidateRepository referredCandidateRepository;
+    @Autowired
+    private ReferredCandidateHistoryRepository referredCandidateHistoryRepository;
+
+    // ... Other autowired repositories ...
     @Autowired
     SelectedReferredCandidateRepository selectedReferredCandidateRepository;
 
@@ -168,6 +174,14 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
             // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit, band
+            if (updatedReferredCandidate.getInterviewStatus() != null
+                    && !updatedReferredCandidate.getInterviewStatus().equalsIgnoreCase(referredCandidate.getInterviewStatus())) {
+                ReferredCandidateHistory historyEntry = new ReferredCandidateHistory();
+                historyEntry.setReferredCandidate(referredCandidate);
+                historyEntry.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
+                historyEntry.setUpdateDate(LocalDate.now());
+                referredCandidateHistoryRepository.save(historyEntry);
+            }
 
             if (updatedReferredCandidate.getCurrentStatus() != null) {
                 referredCandidate.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
