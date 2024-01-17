@@ -9,5 +9,4 @@ import java.util.Optional;
 @Repository
 public interface SelectedReferredCandidateRepository extends JpaRepository<SelectedReferredCandidate, Long> {
 
-    Optional<SelectedReferredCandidate> findByPanNumber(String panNumber);
 }

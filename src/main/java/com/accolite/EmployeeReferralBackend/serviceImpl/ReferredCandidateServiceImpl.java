@@ -70,10 +70,10 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     candidateEmail(referredCandidate.getCandidateEmail()).
                     experience(referredCandidate.getExperience()).
                     contactNumber(referredCandidate.getContactNumber()).
-                    currentStatus(referredCandidate.getCurrentStatus()).
+                    currentStatus(referredCandidate.getCurrentStatus().toUpperCase()).
                     panNumber(referredCandidate.getPanNumber()).
                     willingToRelocate(referredCandidate.isWillingToRelocate()).
-                    interviewStatus(referredCandidate.getInterviewStatus()).
+                    interviewStatus(referredCandidate.getInterviewStatus().toUpperCase()).
                     interviewedPosition(referredCandidate.getInterviewedPosition()).
                     preferredLocation(referredCandidate.getPreferredLocation()).
                     noticePeriod(referredCandidate.getNoticePeriod()).
@@ -207,39 +207,42 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
 
-            System.out.println(savedReferredCandidate);
 
-            Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
-
-
-            if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
-            {
-
-                if(referredCandidate.getBand() == null)
+            try{
+                if(savedReferredCandidate.getCurrentStatus().equals("SELECT"))
                 {
-                    Map<String, Object> errorMap = new HashMap<>();
-                    errorMap.put("status", "error");
-                    errorMap.put("message", "Band not set");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+
+                    if(referredCandidate.getBand() == null)
+                    {
+                        Map<String, Object> errorMap = new HashMap<>();
+                        errorMap.put("status", "error");
+                        errorMap.put("message", "Band not set");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+                    }
+
+                    String band = referredCandidate.getBand();
+
+                    double bonus = calculateBonus(band);
+
+                    var selectedReferredCandidate = SelectedReferredCandidate.builder().
+                            name(referredCandidate.getCandidateName()).
+                            dateOfSelection(LocalDate.now()).
+                            interviewedRole(referredCandidate.getInterviewedPosition()).
+                            bonus(bonus).
+                            bonusAllocated(false).
+                            referrerEmail(referredCandidate.getReferrerEmail()).
+                            referredCandidate(savedReferredCandidate).
+                            currentlyInCompany(true).build();
+
+                    System.out.println(selectedReferredCandidate);
+
+                    selectedReferredCandidateRepository.save(selectedReferredCandidate);
                 }
-
-                String band = referredCandidate.getBand();
-
-                double bonus = calculateBonus(band);
-
-                var selectedReferredCandidate = SelectedReferredCandidate.builder().
-                        name(referredCandidate.getCandidateName()).
-                        panNumber(referredCandidate.getPanNumber()).
-                        dateOfSelection(LocalDate.now()).
-                        interviewedRole(referredCandidate.getInterviewedPosition()).
-                        bonus(bonus).
-                        bonusAllocated(false).
-                        referrerEmail(referredCandidate.getReferrerEmail()).
-                        currentlyInCompany(true).build();
-
-                System.out.println(selectedReferredCandidate);
-
-                selectedReferredCandidateRepository.save(selectedReferredCandidate);
+            }catch (Exception e){
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "Candidate current status is already set to SELECT");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
             }
 
             Map<String, Object> responseJson = new HashMap<>();
