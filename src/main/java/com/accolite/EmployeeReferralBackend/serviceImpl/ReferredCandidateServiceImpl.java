@@ -51,13 +51,19 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             if(!isValidPanCard(referredCandidate.getPanNumber(),referredCandidate.getCandidateName()))
             {
-                throw new IllegalStateException("Not a valid Pan Card");
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "Not a valid Pan Card");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
             }
 
             Optional<ReferredCandidate> existingCandidate = referredCandidateRepository.findByPanNumber(referredCandidate.getPanNumber());
 
             if (existingCandidate.isPresent()) {
-                throw new IllegalStateException("Duplicate PAN number found: " + referredCandidate.getPanNumber());
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "Duplicate PAN number found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
             }
 
             var candidate = ReferredCandidate.builder()
@@ -69,19 +75,17 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     .experience(referredCandidate.getExperience())
                     .contactNumber(referredCandidate.getContactNumber())
                     .candidateEmail(referredCandidate.getCandidateEmail())
-                    .currentStatus(referredCandidate.getCurrentStatus())
+                    .currentStatus("POOL")
                     .panNumber(referredCandidate.getPanNumber())
                     .willingToRelocate(referredCandidate.isWillingToRelocate())
-                    .interviewStatus(referredCandidate.getInterviewStatus())
-                    .interviewedPosition(referredCandidate.getInterviewedPosition())
                     .preferredLocation(referredCandidate.getPreferredLocation())
-                    .businessUnit(referredCandidate.getBusinessUnit())
                     .noticePeriod(referredCandidate.getNoticePeriod())
-                    .band(referredCandidate.getBand())
                     .profileSource(referredCandidate.getProfileSource()) // Include the new field
                     .vouch(referredCandidate.isVouch()) // Include the new field
+                    .noticePeriodLeft(referredCandidate.getNoticePeriodLeft())
+                    .servingNoticePeriod(referredCandidate.isServingNoticePeriod())
+                    .offerInHand(referredCandidate.isOfferInHand())
                     .build();
-
 
 
             // If no duplicacy and email valid, save the new referred candidate
