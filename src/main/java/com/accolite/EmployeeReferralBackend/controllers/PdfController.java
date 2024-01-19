@@ -36,7 +36,7 @@ public class PdfController {
             for(String blacklistCompany:blacklistedCompanies)
             {
                 if(pdfText.trim().toLowerCase().contains(blacklistCompany.trim().toLowerCase())){
-                    String errorResponse = "{\"error\":\"The candidate cannot be referred\"}";
+                    String errorResponse = "{\"error\":\"The candidate cannot be referred. Please contact administrator\"}";
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
                 }
             }
