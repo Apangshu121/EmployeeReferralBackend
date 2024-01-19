@@ -20,40 +20,41 @@ import java.util.Set;
 public class ReferredCandidate{
     @Id
     @GeneratedValue(strategy = GenerationType.TABLE)
-    int id;
-    LocalDateTime dateOfReferral;
-    String referrerEmail;
-    String primarySkill;
+    int id; // Y
+    LocalDateTime dateOfReferral; // Y
+    String referrerEmail; // Y
+    String primarySkill; // Y
 
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "secondarySkills", joinColumns = @JoinColumn(name = "referral_candidate_id"))
     @Column(name = "secondarySkill", nullable = false)
     @Builder.Default
-    Set<String> secondarySkills = new HashSet<>();
+    Set<String> secondarySkills = new HashSet<>(); // N
 
-    String candidateName;
-    int experience;
-    long contactNumber;
-    String candidateEmail;
+    String candidateName; // Y
+    double experience; // Y
+    long contactNumber; // Y
+    String candidateEmail; // Y
     String currentStatus; // Select, Reject, Drop, On Hold, Better qualified for other position, Pool(Default)
-    boolean currentStatusUpdated;
-    String panNumber;
-    boolean willingToRelocate;
-    String interviewStatus; // Codelyser Select, R1 Select, R2 Select, R3 Select, Codelyser Reject, R1 Reject, R2 Reject, R3 Reject
-    boolean interviewStatusUpdated;
-    String interviewedPosition;
-    String preferredLocation;
-    String businessUnit;
-    int noticePeriod; // Immediate(0), 15, 30, 45, 60, 90
-    String band;
-
-    String profileSource;
-
-    boolean vouch;
+    boolean currentStatusUpdated; // N
+    String panNumber; // Y
+    boolean willingToRelocate; // Y
+    String interviewStatus; // Codelyser Select, R1 Select, R2 Select, R3 Select, Codelyser Reject, R1 Reject, R2 Reject, R3 Reject // N
+    boolean interviewStatusUpdated; // N
+    String interviewedPosition; // N
+    String preferredLocation; // Y
+    String businessUnit; // N
+    int noticePeriod; // Immediate(0), 15, 30, 45, 60, 90 // Y
+    String band; // N
+    String profileSource; // Y
+    boolean vouch; // Y
+    boolean servingNoticePeriod; // Y
+    int noticePeriodLeft; // Y
+    boolean offerInHand; // Y
 
     @OneToMany(mappedBy = "referredCandidate", cascade = CascadeType.ALL)
     @JsonManagedReference
-    private Set<ReferredCandidateHistory> referredCandidateHistory;
+    private Set<ReferredCandidateHistory> referredCandidateHistory; // N
 
     // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit, band
 }
