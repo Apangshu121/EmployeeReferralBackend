@@ -62,7 +62,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             if (existingCandidate.isPresent()) {
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
-                errorMap.put("message", "Duplicate PAN number found");
+                errorMap.put("message", "The candidate already exists in the database");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
             }
 
