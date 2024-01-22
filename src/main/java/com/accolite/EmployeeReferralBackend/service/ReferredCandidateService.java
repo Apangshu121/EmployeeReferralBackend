@@ -1,6 +1,7 @@
 package com.accolite.EmployeeReferralBackend.service;
 
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.UpdateReferredCandidateRequestDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +16,11 @@ public interface ReferredCandidateService {
 
     ResponseEntity<Map<String, Object>> getAllCandidates();
 
-    ResponseEntity<Map<String, Object>> getCandidateById(int id);
+    //  ResponseEntity<Map<String, Object>> getCandidateById(int id);
 
-    ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, ReferredCandidate referredCandidate);
+    ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, UpdateReferredCandidateRequestDTO referredCandidate);
+
+    ResponseEntity<Map<String, Object>> interviewTheCandidate(int id);
 
     ResponseEntity<Map<String,Object>> filterCandidatesByExperience(int experience);
 

@@ -8,4 +8,8 @@ import java.util.Map;
 @Service
 public interface UserService {
    ResponseEntity<Map<String,Object>> getDetailsOfUser();
+
+   ResponseEntity<Map<String,Object>> getReferralTallyOfUser();
+
+   ResponseEntity<Map<String,Object>> getAllReferralTally();
 }
