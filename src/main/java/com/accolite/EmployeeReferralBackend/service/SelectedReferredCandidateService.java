@@ -11,7 +11,7 @@ public interface SelectedReferredCandidateService {
 
     ResponseEntity<Map<String, Object>> getAllSelectedReferredCandidates();
 
-    ResponseEntity<Map<String, Object>> getSelectedReferredCandidateById(Long id);
+    //  ResponseEntity<Map<String, Object>> getSelectedReferredCandidateById(Long id);
 
     ResponseEntity<Map<String, Object>> updateReferredSelectedCandidatesById(Long id, SelectedReferredCandidate selectedReferredCandidate);
 

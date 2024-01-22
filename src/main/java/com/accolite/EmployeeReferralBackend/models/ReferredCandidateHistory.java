@@ -2,34 +2,30 @@ package com.accolite.EmployeeReferralBackend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
-@Data
-@Builder
+@Getter
+@Setter
+@ToString(exclude = {"referredCandidate"})
+@EqualsAndHashCode(exclude = {"referredCandidate"})
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "ReferredCandidateHistory")
 public class ReferredCandidateHistory {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    private String interviewStatus;
+
+    @ManyToOne
     @JoinColumn(name = "referred_candidate_id")
     @JsonBackReference
     private ReferredCandidate referredCandidate;
 
-    private String interviewStatus;
+    private LocalDateTime updateDate;
 
-    private LocalDate updateDate;
-
-    // Getter and Setter for all fields
-
-    // Other methods...
 }

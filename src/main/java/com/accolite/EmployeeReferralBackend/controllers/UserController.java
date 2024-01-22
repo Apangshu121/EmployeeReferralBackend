@@ -18,4 +18,14 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getDetailsOfUser() {
         return userService.getDetailsOfUser();
     }
+
+    @GetMapping("/getReferralTally")
+    public ResponseEntity<Map<String,Object>> getReferralTallyOfUser(){
+        return userService.getReferralTallyOfUser();
+    }
+
+    @GetMapping("/getAllReferralsTally")
+    public ResponseEntity<Map<String,Object>> getAllReferralTally(){
+        return userService.getAllReferralTally();
+    }
 }
