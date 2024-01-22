@@ -1,6 +1,5 @@
 package com.accolite.EmployeeReferralBackend.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +24,7 @@ public class SecurityConfig {
 
     private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo"};
 
-    private static final String[] AUTHENTICATED_LIST_URL = {"/getUserDetails", "/api/referredCandidates/add","/api/referredCandidates/getAllCandidatesOfUser"};
+    private static final String[] AUTHENTICATED_LIST_URL = {"/user/getUserDetails", "/api/referredCandidates/add","/api/referredCandidates/getAllCandidatesOfUser","/user/getReferralTally"};
     private static final String[] RECRUITER_LIST_URL = {"/api/referredCandidates/getAll",
             "/api/referredCandidates/get/**",
             "/api/selectedReferredCandidates/allocateBonus/**",
@@ -36,7 +35,9 @@ public class SecurityConfig {
             "/api/referredCandidates/filterByExperience/**",
             "/api/referredCandidates/filterByPreferredLocation/**",
             "/api/referredCandidates/filterByNoticePeriod/**",
-            "/api/referredCandidates/sendMail/**"
+            "/api/referredCandidates/sendMail/**",
+            "/api/selectReferredCandidateForInterview/**",
+            "/user/getAllReferralsTally"
 
     };
 
