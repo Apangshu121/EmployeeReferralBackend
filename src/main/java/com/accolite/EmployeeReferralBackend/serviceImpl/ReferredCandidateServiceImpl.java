@@ -68,7 +68,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             if (existingCandidateOpt.isPresent() && currentDateTime.isBefore(existingCandidateOpt.get().getUpdatedAt().plus(6, ChronoUnit.MONTHS))) {
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
-                errorMap.put("message", "The candidate has been referred within the last 30 seconds");
+                errorMap.put("message", "The candidate has been referred within the last 6 months");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
             }else if(existingCandidateOpt.isPresent() && currentDateTime.isAfter(existingCandidateOpt.get().getUpdatedAt().plus(6, ChronoUnit.MONTHS)) && existingCandidateOpt.get().getNoOfTimesReferred()==3){
                 Map<String, Object> errorMap = new HashMap<>();
@@ -332,6 +332,14 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                         Map<String, Object> errorMap = new HashMap<>();
                         errorMap.put("status", "error");
                         errorMap.put("message", "Band not set");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+                    }
+
+                    if(savedReferredCandidate.getInterviewedPosition() == null)
+                    {
+                        Map<String, Object> errorMap = new HashMap<>();
+                        errorMap.put("status", "error");
+                        errorMap.put("message", "Interviewed Position of candidate not set");
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
                     }
 

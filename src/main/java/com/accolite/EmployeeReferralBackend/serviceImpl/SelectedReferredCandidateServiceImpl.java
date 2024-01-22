@@ -107,10 +107,6 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
                 selectedReferredCandidate.setDateOfJoining(updatedSelectedReferredCandidate.getDateOfJoining());
             }
 
-            if(updatedSelectedReferredCandidate.getInterviewedRole()!=null){
-                selectedReferredCandidate.setInterviewedRole(updatedSelectedReferredCandidate.getInterviewedRole());
-            }
-
             if(!updatedSelectedReferredCandidate.isCurrentlyInCompany()){
                 selectedReferredCandidate.setCurrentlyInCompany(false);
             }
