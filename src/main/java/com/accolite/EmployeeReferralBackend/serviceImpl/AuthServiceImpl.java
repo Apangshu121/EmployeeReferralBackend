@@ -66,7 +66,11 @@ public class AuthServiceImpl implements AuthService {
                     .orElse(null);
 
             if(user==null){
-                var userEntry = User.builder().email(response.getBody().getEmail()).name(response.getBody().getName()).role(Role.EMPLOYEE).build();
+                User userEntry = new User();
+                userEntry.setEmail(response.getBody().getEmail());
+                userEntry.setName(response.getBody().getName());
+                userEntry.setRole(Role.EMPLOYEE);
+                userEntry.setActive(true);
                 jwtToken = jwtService.generateToken(userRepository.save(userEntry));
             }else{
                 jwtToken = jwtService.generateToken(user);
