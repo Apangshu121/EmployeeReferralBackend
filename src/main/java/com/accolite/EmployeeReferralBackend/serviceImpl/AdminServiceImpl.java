@@ -48,11 +48,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public ResponseEntity<Map<String, Object>> modifyUser(String email, User modifiedUser) {
+    public ResponseEntity<Map<String, Object>> modifyUser(String email, User modifiedUser)
+    {
         try {
-            Optional<User> existingUserOptional = userRepository.findByEmail(email);
-            if (existingUserOptional.isPresent()) {
-                User existingUser = existingUserOptional.get();
+           User existingUser = userRepository.findByEmail(email).orElseThrow();
+
+
 
                 existingUser.setRole(modifiedUser.getRole());
                 // Update other properties as needed
@@ -63,16 +64,44 @@ public class AdminServiceImpl implements AdminService {
                 responseJson.put("User", convertToDTO(savedUser));
 
                 return ResponseEntity.ok(responseJson);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+
         } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
+
+
     }
+    @Override
+    public ResponseEntity<Map<String, Object>> deleteUser(long id){
+        try {
+           User existingUser = userRepository.findById(id).orElseThrow();
+
+
+
+                existingUser.setActive(false);
+                // Update other properties as needed
+
+                User savedUser = userRepository.save(existingUser);
+
+                Map<String, Object> responseJson = new HashMap<>();
+                responseJson.put("Message", "User deleted");
+
+                return ResponseEntity.ok(responseJson);
+
+
+
+        } catch (Exception e)
+        {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
 
     private UserDTO convertToDTO(User user) {
         return new UserDTO(
@@ -83,4 +112,6 @@ public class AdminServiceImpl implements AdminService {
                 user.getTotalBonus()
         );
     }
+
+
 }

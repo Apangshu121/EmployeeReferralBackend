@@ -14,4 +14,6 @@ public interface AdminService {
     ResponseEntity<Map<String, Object>> modifyUser(String email, User modifiedUser);
 
 
+    ResponseEntity<Map<String, Object>> deleteUser(long id);
+
 }

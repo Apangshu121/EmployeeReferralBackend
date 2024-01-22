@@ -42,7 +42,7 @@ public class SecurityConfig {
 
     };
 
-    private static final String[] ADMIN_LIST_URL = {"/admin/users/modify/**","/admin/users/all"};
+    private static final String[] ADMIN_LIST_URL = {"/admin/users/modify/**","/admin/users/all","/admin/users/delete/**"};
 
 
     @Bean
