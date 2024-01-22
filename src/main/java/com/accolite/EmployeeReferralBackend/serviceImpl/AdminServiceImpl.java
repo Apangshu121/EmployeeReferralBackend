@@ -31,7 +31,7 @@ public class AdminServiceImpl implements AdminService {
         try {
             List<User> users = userRepository.findAll();
 
-            List<UserDTO> userDTOs = users.stream()
+            List<UserDTO> userDTOs = users.stream().filter((User::isActive))
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
 

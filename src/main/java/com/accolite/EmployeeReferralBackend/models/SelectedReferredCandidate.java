@@ -16,27 +16,27 @@ import java.time.LocalDate;
 public class SelectedReferredCandidate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
 
-    String name;
+    private String name;
 
-    LocalDate dateOfSelection;
+    private String email;
 
-    LocalDate dateOfJoining;
+    private long phoneNumber;
 
-    String interviewedRole;
+    private String interviewedRole;
 
-    double bonus;
+    private String referrerEmail;
 
-    String referrerEmail;
+    private LocalDate dateOfJoining;
 
-    boolean currentlyInCompany;
+    private double bonus;
 
-    boolean bonusAllocated;
+    private boolean currentlyInCompany;
 
-    @OneToOne
-    @JoinColumn(name = "referred_candidate_id", unique = true)
-    private ReferredCandidate referredCandidate;
+    private boolean bonusAllocated;
+
+
     // updated by dateOfJoining, bonusAllocated, currentlyInCompany.
 }

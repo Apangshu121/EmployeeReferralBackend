@@ -1,6 +1,7 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -40,11 +41,16 @@ public class ReferredCandidateController {
         }
     }
 
-    @GetMapping("/get/{id}")
-    public ResponseEntity<Map<String,Object>> getReferredCandidateById(@PathVariable int id){ return referredCandidateService.getCandidateById(id);}
+    @PutMapping("/selectReferredCandidateForInterview/{id}")
+    public ResponseEntity<Map<String,Object>> interviewTheCandidate(@PathVariable int id){
+        return referredCandidateService.interviewTheCandidate(id);
+    }
+
+//    @GetMapping("/get/{id}")
+//    public ResponseEntity<Map<String,Object>> getReferredCandidateById(@PathVariable int id){ return referredCandidateService.getCandidateById(id);}
 
     @PutMapping("/update/{id}")
-        public ResponseEntity<Map<String,Object>> updateReferredCandidate(@PathVariable int id, @RequestBody ReferredCandidate referredCandidate){ return referredCandidateService.updateReferredCandidate(id, referredCandidate);}
+    public ResponseEntity<Map<String,Object>> updateReferredCandidate(@PathVariable int id, @RequestBody UpdateReferredCandidateRequestDTO referredCandidate){ return referredCandidateService.updateReferredCandidate(id, referredCandidate);}
 
     @GetMapping("/filterByExperience/{experience}")
     public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(

@@ -42,22 +42,22 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
         }
     }
 
-    @Override
-    public ResponseEntity<Map<String, Object>> getSelectedReferredCandidateById(Long id) {
-        try{
-            Map<String, Object> responseJson = new HashMap<>();
-            Optional<SelectedReferredCandidate> selectedReferredCandidate = selectedReferredCandidateRepository.findById(id);
-
-            selectedReferredCandidate.ifPresent(candidate -> responseJson.put("candidate", candidate));
-
-            return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
-            Map<String, Object> errorMap = new HashMap<>();
-            errorMap.put("status", "error");
-            errorMap.put("message", "An error occurred");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
-        }
-    }
+//    @Override
+//    public ResponseEntity<Map<String, Object>> getSelectedReferredCandidateById(Long id) {
+//        try{
+//            Map<String, Object> responseJson = new HashMap<>();
+//            Optional<SelectedReferredCandidate> selectedReferredCandidate = selectedReferredCandidateRepository.findById(id);
+//
+//            selectedReferredCandidate.ifPresent(candidate -> responseJson.put("candidate", candidate));
+//
+//            return ResponseEntity.ok(responseJson);
+//        }catch (Exception e){
+//            Map<String, Object> errorMap = new HashMap<>();
+//            errorMap.put("status", "error");
+//            errorMap.put("message", "An error occurred");
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+//        }
+//    }
 
     @Override
     public ResponseEntity<Map<String,Object>> allocateBonusToUser(Long candidateId)
@@ -85,7 +85,7 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
             }else{
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
-                errorMap.put("message", "User does not exist or bonus already exists");
+                errorMap.put("message", "User does not exist or bonus already allocated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
             }
 
@@ -101,14 +101,14 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
     public ResponseEntity<Map<String, Object>> updateReferredSelectedCandidatesById(Long id, SelectedReferredCandidate updatedSelectedReferredCandidate) {
         try {
             SelectedReferredCandidate selectedReferredCandidate = selectedReferredCandidateRepository.findById(id).orElseThrow();
-            // updated by dateOfJoining, bonusAllocated, currentlyInCompany.
+            // updated by dateOfJoining, currentlyInCompany, interviewedRole
 
             if(updatedSelectedReferredCandidate.getDateOfJoining()!=null){
                 selectedReferredCandidate.setDateOfJoining(updatedSelectedReferredCandidate.getDateOfJoining());
             }
 
-            if(updatedSelectedReferredCandidate.isBonusAllocated()){
-                selectedReferredCandidate.setBonusAllocated(true);
+            if(updatedSelectedReferredCandidate.getInterviewedRole()!=null){
+                selectedReferredCandidate.setInterviewedRole(updatedSelectedReferredCandidate.getInterviewedRole());
             }
 
             if(!updatedSelectedReferredCandidate.isCurrentlyInCompany()){

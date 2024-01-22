@@ -22,7 +22,7 @@ public class SecurityConfig {
     @Autowired
     AuthenticationProvider authenticationProvider;
 
-    private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo"};
+    private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo","/api/referredCandidates/getAll"};
 
     private static final String[] AUTHENTICATED_LIST_URL = {"/user/getUserDetails", "/api/referredCandidates/add","/api/referredCandidates/getAllCandidatesOfUser","/user/getReferralTally"};
     private static final String[] RECRUITER_LIST_URL = {"/api/referredCandidates/getAll",
