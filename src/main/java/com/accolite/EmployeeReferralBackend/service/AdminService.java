@@ -16,4 +16,5 @@ public interface AdminService {
 
     ResponseEntity<Map<String, Object>> deleteUser(long id);
 
+    ResponseEntity<Map<String, Object>> searchUsers(String keyword);
 }

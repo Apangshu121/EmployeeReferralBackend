@@ -29,8 +29,6 @@ public class User implements UserDetails {
     private String email;
     private String name;
 
-
-
     @Enumerated(EnumType.STRING)
     private Role role;
     private double totalBonus;

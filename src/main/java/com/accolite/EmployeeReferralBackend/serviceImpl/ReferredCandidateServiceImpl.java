@@ -24,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 @Transactional
@@ -80,7 +81,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     ReferredCandidate candidate = new ReferredCandidate();
 
                     candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
-                    candidate.setSecondarySkills(referredCandidate.getSecondarySkills());
                     candidate.setCandidateName(referredCandidate.getCandidateName());
                     candidate.setExperience(referredCandidate.getExperience());
                     candidate.setContactNumber(referredCandidate.getContactNumber());
@@ -112,7 +112,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 }else{
                     ReferredCandidate existingCandidate = existingCandidateOpt.get();
                     existingCandidate.setPrimarySkill(referredCandidate.getPrimarySkill());
-                    existingCandidate.setSecondarySkills(referredCandidate.getSecondarySkills());
                     existingCandidate.setCandidateName(referredCandidate.getCandidateName());
                     existingCandidate.setExperience(referredCandidate.getExperience());
                     existingCandidate.setContactNumber(referredCandidate.getContactNumber());
@@ -195,7 +194,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         return ReferredCandidateDTO.builder()
                 .id(candidate.getId())
                 .primarySkill(candidate.getPrimarySkill())
-                .secondarySkills(candidate.getSecondarySkills())
                 .candidateName(candidate.getCandidateName())
                 .experience(candidate.getExperience())
                 .contactNumber(candidate.getContactNumber())
@@ -259,24 +257,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
-
-//    @Override
-//    public ResponseEntity<Map<String, Object>> getCandidateById(int id) {
-//
-//        try{
-//            Map<String, Object> responseJson = new HashMap<>();
-//            Optional<ReferredCandidate> referredCandidate = referredCandidateRepository.findById(id);
-//
-//            referredCandidate.ifPresent(candidate -> responseJson.put("candidate", candidate));
-//
-//            return ResponseEntity.ok(responseJson);
-//        }catch (Exception e){
-//            Map<String, Object> errorMap = new HashMap<>();
-//            errorMap.put("status", "error");
-//            errorMap.put("message", "An error occurred");
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
-//        }
-//    }
 
     @Override
     public ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, UpdateReferredCandidateRequestDTO updatedReferredCandidate) {
@@ -381,32 +361,51 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+
+    private List<ReferredCandidateDTO> filterCandidatesByExperienceUtil(int experience)
+    {
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
+        List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
+                .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
+                .toList();
+
+        return  referredCandidateDTOS;
+    }
+
     @Override
     public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(int experience) {
         try {
-            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
-            List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
-                    .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
-                    .toList();
 
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByExperienceUtil(experience);
             Map<String, Object> responseJson = new HashMap<>();
 
             responseJson.put("Filtered Candidates", referredCandidateDTOS);
             return ResponseEntity.ok(responseJson);
         } catch (Exception e) {
+            e.printStackTrace();
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+
+    private List<ReferredCandidateDTO> filterCandidatesByPreferredLocationUtil(String preferredLocation)
+    {
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
+        List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
+                .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
+                .toList();
+
+        return  referredCandidateDTOS;
+    }
+
     @Override
     public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocation(String preferredLocation) {
         try {
-            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
-            List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
-                    .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
-                    .toList();
+
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByPreferredLocationUtil(preferredLocation);
+
             Map<String, Object> responseJson = new HashMap<>();
 
             responseJson.put("Filtered Candidates", referredCandidateDTOS);
@@ -422,11 +421,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     @Override
     public ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriodLeft) {
         try {
-            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLeftLessThanOrEqual(noticePeriodLeft);
-            List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
-                    .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
-                    .toList();
-
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByNoticePeriodLessThanOrEqualUtil(noticePeriodLeft);
             Map<String, Object> responseJson = new HashMap<>();
 
             responseJson.put("Filtered Candidates", referredCandidateDTOS);
@@ -437,6 +432,16 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
+    }
+
+    private List<ReferredCandidateDTO> filterCandidatesByNoticePeriodLessThanOrEqualUtil(int noticePeriodLeft) {
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLeftLessThanOrEqual(noticePeriodLeft);
+        List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
+                .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
+                .toList();
+
+        return referredCandidateDTOS;
+
     }
 
     @Override
@@ -549,6 +554,68 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         }
     }
 
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByExperienceAndSearch(int experience, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByExperienceUtil(experience);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocationAndSearch(String preferredLocation, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByPreferredLocationUtil(preferredLocation);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(int noticePeriod, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByNoticePeriodLessThanOrEqualUtil(noticePeriod);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
 
 
     private String getTemplateOfReferrerForCandidateForCandidateStatus(String currentStatus, String candidateName) {
