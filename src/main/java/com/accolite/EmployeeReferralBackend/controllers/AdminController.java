@@ -26,8 +26,14 @@ public class AdminController {
     }
 
     @PutMapping("/modify/{userEmail}")
-    public ResponseEntity<Map<String,Object>> modifyOrCreateUser(@PathVariable String userEmail, @RequestBody User modifiedUser) {
+    public ResponseEntity<Map<String, Object>> modifyOrCreateUser(@PathVariable String userEmail, @RequestBody User modifiedUser) {
         return adminService.modifyUser(userEmail, modifiedUser);
 
+
+    }
+
+    @PutMapping("/delete/{id}")
+    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable long id) {
+        return adminService.deleteUser(id);
     }
 }
