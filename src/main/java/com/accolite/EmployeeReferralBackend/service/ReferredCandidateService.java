@@ -31,5 +31,7 @@ public interface ReferredCandidateService {
     ResponseEntity<Map<String,Object>> sendMail(int id);
 
     ResponseEntity<Map<String, Object>> searchCandidates(String keyword);
+
+
 }
 

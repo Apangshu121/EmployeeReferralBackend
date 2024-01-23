@@ -1,5 +1,6 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
+import com.accolite.EmployeeReferralBackend.models.AdminUpdateDTO;
 import com.accolite.EmployeeReferralBackend.models.User;
 import com.accolite.EmployeeReferralBackend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,11 @@ public class AdminController {
 
 
     }
-
+    @PutMapping("/editReferredCandidate/{id}")
+    public ResponseEntity<Map<String, Object>> editReferredCandidate(@PathVariable int id, @RequestBody AdminUpdateDTO adminUpdateDTO) {
+        // Call the service method to update the referred candidate
+        return adminService.updateReferredCandidate(id, adminUpdateDTO);
+    }
     @PutMapping("/delete/{id}")
     public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable long id) {
         return adminService.deleteUser(id);
