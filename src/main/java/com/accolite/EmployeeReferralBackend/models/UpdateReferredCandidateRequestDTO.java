@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class UpdateReferredCandidateRequestDTO {
 
     private String interviewedPosition;
+    private int noOfRounds;
     private String currentStatus;
     private String interviewStatus;
     private String businessUnit;
