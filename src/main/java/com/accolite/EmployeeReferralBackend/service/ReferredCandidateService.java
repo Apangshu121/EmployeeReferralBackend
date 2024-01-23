@@ -35,5 +35,7 @@ public interface ReferredCandidateService {
     ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocationAndSearch(String preferredLocation, String keyword);
 
     ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(int noticePeriod, String keyword);
+
+
 }
 

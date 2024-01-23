@@ -20,14 +20,14 @@ import java.util.Set;
 public class ReferredCandidate{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id; // Y
+    private Long id; //
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonBackReference
     private User user;
 
-    private String primarySkill; // Y
+    private String primarySkill;
     private int noOfTimesReferred;
 
     private String candidateName; // Y
@@ -56,7 +56,7 @@ public class ReferredCandidate{
 
     @OneToMany(mappedBy = "referredCandidate", cascade = CascadeType.ALL)
     @JsonManagedReference
-    private Set<ReferredCandidateHistory> referredCandidateHistory; // N
+    private Set<ReferredCandidateHistory> referredCandidateHistory;
 
     private boolean isActive; // Y
 
