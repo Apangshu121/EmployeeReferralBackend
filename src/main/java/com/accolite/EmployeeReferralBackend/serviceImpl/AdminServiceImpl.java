@@ -129,9 +129,9 @@ try {
 
     // Save the updated candidate
     ReferredCandidate referredCandidate = referredCandidateRepository.save(existingCandidate);
-
+    AdminUpdateDTO adminUpdateDTO= convertToAdminDTO(referredCandidate);
     Map<String, Object> responseJson = new HashMap<>();
-    responseJson.put("User", referredCandidate);
+    responseJson.put("User", adminUpdateDTO);
 
     return ResponseEntity.ok(responseJson);
 
@@ -144,7 +144,23 @@ try {
 
     }
 
+    private AdminUpdateDTO convertToAdminDTO(ReferredCandidate referredCandidate) {
+        AdminUpdateDTO adminUpdateDTO = new AdminUpdateDTO();
+        // Set fields in AdminUpdateDTO based on referredCandidate
+        adminUpdateDTO.setPrimarySkill(referredCandidate.getPrimarySkill());
+        adminUpdateDTO.setCandidateName(referredCandidate.getCandidateName());
+        adminUpdateDTO.setExperience(referredCandidate.getExperience());
+        adminUpdateDTO.setContactNumber(referredCandidate.getContactNumber());
+        adminUpdateDTO.setCandidateEmail(referredCandidate.getCandidateEmail());
+        adminUpdateDTO.setWillingToRelocate(referredCandidate.isWillingToRelocate());
+        adminUpdateDTO.setPreferredLocation(referredCandidate.getPreferredLocation());
+        adminUpdateDTO.setServingNoticePeriod(referredCandidate.isServingNoticePeriod());
+        adminUpdateDTO.setNoticePeriodLeft(referredCandidate.getNoticePeriodLeft());
+        adminUpdateDTO.setOfferInHand(referredCandidate.isOfferInHand());
+        // Set other fields...
 
+        return adminUpdateDTO;
+    }
     private UserDTO convertToDTO(User user) {
         return new UserDTO(
                 user.getId(),
