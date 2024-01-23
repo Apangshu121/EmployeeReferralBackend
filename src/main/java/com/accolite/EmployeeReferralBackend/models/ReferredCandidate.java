@@ -30,11 +30,6 @@ public class ReferredCandidate{
     private String primarySkill;
     private int noOfTimesReferred;
 
-    @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "secondarySkills", joinColumns = @JoinColumn(name = "referral_candidate_id"))
-    @Column(name = "secondarySkill", nullable = false)
-    private Set<String> secondarySkills = new HashSet<>(); // N
-
     private String candidateName; // Y
     private double experience; // Y
     private long contactNumber; // Y

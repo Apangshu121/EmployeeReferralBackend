@@ -16,8 +16,6 @@ public interface ReferredCandidateService {
 
     ResponseEntity<Map<String, Object>> getAllCandidates();
 
-    //  ResponseEntity<Map<String, Object>> getCandidateById(int id);
-
     ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, UpdateReferredCandidateRequestDTO referredCandidate);
 
     ResponseEntity<Map<String, Object>> interviewTheCandidate(int id);
@@ -31,6 +29,12 @@ public interface ReferredCandidateService {
     ResponseEntity<Map<String,Object>> sendMail(int id);
 
     ResponseEntity<Map<String, Object>> searchCandidates(String keyword);
+
+    ResponseEntity<Map<String, Object>> filterCandidatesByExperienceAndSearch(int experience, String keyword);
+
+    ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocationAndSearch(String preferredLocation, String keyword);
+
+    ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(int noticePeriod, String keyword);
 
 
 }

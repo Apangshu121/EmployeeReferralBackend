@@ -51,7 +51,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(req->req.requestMatchers(WHITE_LIST_URL)
                         .permitAll()
-                        .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","BU_HEAD","ADMIN")
+                        .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","SENIOR","ADMIN")
                         .requestMatchers(RECRUITER_LIST_URL).hasAuthority("RECRUITER")
                         .requestMatchers(ADMIN_LIST_URL).hasAuthority("ADMIN")
                         .anyRequest()

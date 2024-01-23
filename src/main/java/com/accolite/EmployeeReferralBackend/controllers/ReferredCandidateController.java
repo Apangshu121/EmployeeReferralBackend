@@ -46,27 +46,44 @@ public class ReferredCandidateController {
         return referredCandidateService.interviewTheCandidate(id);
     }
 
-//    @GetMapping("/get/{id}")
-//    public ResponseEntity<Map<String,Object>> getReferredCandidateById(@PathVariable int id){ return referredCandidateService.getCandidateById(id);}
-
     @PutMapping("/update/{id}")
     public ResponseEntity<Map<String,Object>> updateReferredCandidate(@PathVariable int id, @RequestBody UpdateReferredCandidateRequestDTO referredCandidate){ return referredCandidateService.updateReferredCandidate(id, referredCandidate);}
 
     @GetMapping("/filterByExperience/{experience}")
     public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(
-            @PathVariable int experience) {
-        return referredCandidateService.filterCandidatesByExperience(experience);
+            @PathVariable int experience, @RequestParam(value = "keyword", required = false) String keyword) {
+        if (keyword == null) {
+            // If a search keyword is provided, return the products that match the name
+            return referredCandidateService.filterCandidatesByExperience(experience);
+        } else {
+            // If no search keyword, return all products
+            return referredCandidateService.filterCandidatesByExperienceAndSearch(experience, keyword);
+        }
     }
     @GetMapping("/filterByPreferredLocation/{preferredLocation}")
     public ResponseEntity<Map<String,Object>> filterCandidatesByPreferredLocation(
-            @PathVariable String preferredLocation) {
-        return referredCandidateService.filterCandidatesByPreferredLocation(preferredLocation);
+            @PathVariable String preferredLocation, @RequestParam(value = "keyword", required = false) String keyword) {
+
+        if (keyword == null) {
+            // If a search keyword is provided, return the products that match the name
+            return referredCandidateService.filterCandidatesByPreferredLocation(preferredLocation);
+        } else {
+            // If no search keyword, return all products
+            return referredCandidateService.filterCandidatesByPreferredLocationAndSearch(preferredLocation, keyword);
+        }
     }
 
     @GetMapping("/filterByNoticePeriod/{noticePeriod}")
     public ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriod(
-            @PathVariable int noticePeriod) {
-        return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqual(noticePeriod);
+            @PathVariable int noticePeriod, @RequestParam(value = "keyword", required = false) String keyword) {
+
+        if (keyword == null) {
+            // If a search keyword is provided, return the products that match the name
+            return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqual(noticePeriod);
+        } else {
+            // If no search keyword, return all products
+            return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(noticePeriod, keyword);
+        }
     }
 
     @PostMapping("/sendMail/{id}")

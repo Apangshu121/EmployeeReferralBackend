@@ -3,20 +3,22 @@ package com.accolite.EmployeeReferralBackend.serviceImpl;
 
 import com.accolite.EmployeeReferralBackend.models.AdminUpdateDTO;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
-import com.accolite.EmployeeReferralBackend.models.UserDTO;
 import com.accolite.EmployeeReferralBackend.models.User;
+import com.accolite.EmployeeReferralBackend.models.UserDTO;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.repository.UserRepository;
 import com.accolite.EmployeeReferralBackend.service.AdminService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -85,8 +87,6 @@ public class AdminServiceImpl implements AdminService {
         try {
            User existingUser = userRepository.findById(id).orElseThrow();
 
-
-
                 existingUser.setActive(false);
                 // Update other properties as needed
 
@@ -101,6 +101,37 @@ public class AdminServiceImpl implements AdminService {
 
         } catch (Exception e)
         {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> searchUsers(String keyword) {
+        try{
+            Specification<User> specification = (root, query, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+
+                if (keyword != null && !keyword.isEmpty()) {
+                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + keyword.toLowerCase() + "%"));
+                }
+
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            };
+
+            List<User> searchedUsersList = userRepository.findAll(specification);
+            List<UserDTO> userDTOS = searchedUsersList.stream()
+                    .map(this::convertToDTO)
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Searched Candidates", userDTOS);
+
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");

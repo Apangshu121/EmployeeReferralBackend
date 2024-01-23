@@ -80,7 +80,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     ReferredCandidate candidate = new ReferredCandidate();
 
                     candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
-                    candidate.setSecondarySkills(referredCandidate.getSecondarySkills());
                     candidate.setCandidateName(referredCandidate.getCandidateName());
                     candidate.setExperience(referredCandidate.getExperience());
                     candidate.setContactNumber(referredCandidate.getContactNumber());
@@ -112,7 +111,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 }else{
                     ReferredCandidate existingCandidate = existingCandidateOpt.get();
                     existingCandidate.setPrimarySkill(referredCandidate.getPrimarySkill());
-                    existingCandidate.setSecondarySkills(referredCandidate.getSecondarySkills());
                     existingCandidate.setCandidateName(referredCandidate.getCandidateName());
                     existingCandidate.setExperience(referredCandidate.getExperience());
                     existingCandidate.setContactNumber(referredCandidate.getContactNumber());
@@ -195,7 +193,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         return ReferredCandidateDTO.builder()
                 .id(candidate.getId())
                 .primarySkill(candidate.getPrimarySkill())
-                .secondarySkills(candidate.getSecondarySkills())
                 .candidateName(candidate.getCandidateName())
                 .experience(candidate.getExperience())
                 .contactNumber(candidate.getContactNumber())
@@ -247,6 +244,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             interviewStatus.setInterviewStatus("POOL");
             referredCandidate.setInterviewStatus(interviewStatus);
             referredCandidate.setUpdatedAt(LocalDateTime.now());
+            interviewStatus.setNoOfRounds(4);
             referredCandidateRepository.save(referredCandidate);
             Map<String,Object> responseMap = new HashMap<>();
             responseMap.put("message","Candidate selected for interview");
@@ -259,24 +257,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
-
-//    @Override
-//    public ResponseEntity<Map<String, Object>> getCandidateById(int id) {
-//
-//        try{
-//            Map<String, Object> responseJson = new HashMap<>();
-//            Optional<ReferredCandidate> referredCandidate = referredCandidateRepository.findById(id);
-//
-//            referredCandidate.ifPresent(candidate -> responseJson.put("candidate", candidate));
-//
-//            return ResponseEntity.ok(responseJson);
-//        }catch (Exception e){
-//            Map<String, Object> errorMap = new HashMap<>();
-//            errorMap.put("status", "error");
-//            errorMap.put("message", "An error occurred");
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
-//        }
-//    }
 
     @Override
     public ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, UpdateReferredCandidateRequestDTO updatedReferredCandidate) {
@@ -298,6 +278,10 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             if (updatedReferredCandidate.getCurrentStatus() != null) {
                 interviewStatus.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
                 interviewStatus.setCurrentStatusUpdated(true);
+            }
+
+            if(updatedReferredCandidate.getNoOfRounds() != 0) {
+                interviewStatus.setNoOfRounds(updatedReferredCandidate.getNoOfRounds());
             }
 
             if (updatedReferredCandidate.getInterviewStatus() != null) {
@@ -343,6 +327,8 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
                     }
 
+
+
                     String band = savedReferredCandidate.getBand();
 
                     double bonus = calculateBonus(band);
@@ -381,32 +367,51 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+
+    private List<ReferredCandidateDTO> filterCandidatesByExperienceUtil(int experience)
+    {
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
+        List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
+                .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
+                .toList();
+
+        return  referredCandidateDTOS;
+    }
+
     @Override
     public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(int experience) {
         try {
-            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
-            List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
-                    .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
-                    .toList();
 
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByExperienceUtil(experience);
             Map<String, Object> responseJson = new HashMap<>();
 
             responseJson.put("Filtered Candidates", referredCandidateDTOS);
             return ResponseEntity.ok(responseJson);
         } catch (Exception e) {
+            e.printStackTrace();
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
+
+    private List<ReferredCandidateDTO> filterCandidatesByPreferredLocationUtil(String preferredLocation)
+    {
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
+        List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
+                .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
+                .toList();
+
+        return  referredCandidateDTOS;
+    }
+
     @Override
     public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocation(String preferredLocation) {
         try {
-            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
-            List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
-                    .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
-                    .toList();
+
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByPreferredLocationUtil(preferredLocation);
+
             Map<String, Object> responseJson = new HashMap<>();
 
             responseJson.put("Filtered Candidates", referredCandidateDTOS);
@@ -422,11 +427,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     @Override
     public ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriodLeft) {
         try {
-            List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLeftLessThanOrEqual(noticePeriodLeft);
-            List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
-                    .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
-                    .toList();
-
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByNoticePeriodLessThanOrEqualUtil(noticePeriodLeft);
             Map<String, Object> responseJson = new HashMap<>();
 
             responseJson.put("Filtered Candidates", referredCandidateDTOS);
@@ -439,6 +440,16 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         }
     }
 
+    private List<ReferredCandidateDTO> filterCandidatesByNoticePeriodLessThanOrEqualUtil(int noticePeriodLeft) {
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLeftLessThanOrEqual(noticePeriodLeft);
+        List<ReferredCandidateDTO> referredCandidateDTOS = filteredCandidates.stream()
+                .map(candidate -> mapToReferredCandidateDTO(candidate, candidate.getUser()))
+                .toList();
+
+        return referredCandidateDTOS;
+
+    }
+
     @Override
     public ResponseEntity<Map<String, Object>> sendMail(int id) {
 
@@ -449,14 +460,14 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             boolean flag1=false;
             boolean flag2=false;
-            System.out.println(referredCandidate.getCandidateName()+" "+referredCandidate.getCandidateEmail()+" "+referredCandidate.getUser().getEmail());
+           // System.out.println(referredCandidate.getCandidateName()+" "+referredCandidate.getCandidateEmail()+" "+referredCandidate.getUser().getEmail());
 
             if(interviewStatus.isInterviewStatusUpdated()){
                 interviewStatus.setInterviewStatusUpdated(false);
                 flag1=true;
                 SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
                 simpleMailMessage.setFrom(fromMail);
-                String subject= getSubjectOfCandidate(interviewStatus.getInterviewStatus());
+                String subject= getSubjectOfCandidate(interviewStatus.getInterviewStatus(),referredCandidate.getCandidateName());
                 String template = getTemplateOfCandidate(interviewStatus.getInterviewStatus(),referredCandidate.getCandidateName());
                 simpleMailMessage.setSubject(subject);
                 simpleMailMessage.setText(template);
@@ -465,7 +476,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
                 SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
                 simpleMailMessage1.setFrom(fromMail);
-                String subject1= getSubjectOfReferrer(interviewStatus.getInterviewStatus(),referredCandidate.getCandidateName());
+                String subject1= getSubjectOfReferrer(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
                 String template1 = getTemplateOfReferrer(interviewStatus.getInterviewStatus(),referredCandidate.getCandidateName());
                 simpleMailMessage1.setSubject(subject1);
                 simpleMailMessage1.setText(template1);
@@ -488,7 +499,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
                 simpleMailMessage1.setFrom(fromMail);
                 String subject1= getSubjectOfReferrerForCandidateStatus(referredCandidate.getCandidateName());
-                String template1 = getTemplateOfReferrerForCandidateForCandidateStatus(interviewStatus.getCurrentStatus(),referredCandidate.getCandidateName());
+                String template1 = getTemplateOfReferrerForCandidateStatus(interviewStatus.getCurrentStatus(),referredCandidate.getCandidateName());
                 simpleMailMessage1.setSubject(subject1);
                 simpleMailMessage1.setText(template1);
                 simpleMailMessage1.setTo(referredCandidate.getUser().getEmail());
@@ -549,9 +560,72 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         }
     }
 
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByExperienceAndSearch(int experience, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByExperienceUtil(experience);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocationAndSearch(String preferredLocation, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByPreferredLocationUtil(preferredLocation);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(int noticePeriod, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByNoticePeriodLessThanOrEqualUtil(noticePeriod);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
 
 
-    private String getTemplateOfReferrerForCandidateForCandidateStatus(String currentStatus, String candidateName) {
+    private String getTemplateOfReferrerForCandidateStatus(String currentStatus, String candidateName) {
+
         String greeting = "Hello " + "Referrer" + ",\n\n";
         String content = switch (currentStatus.toUpperCase()) {
             case "SELECT" ->
@@ -572,12 +646,12 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     private String getSubjectOfReferrerForCandidateStatus(String candidateName) {
-        String subject = "Application Status Update for Referred Candidate: " + candidateName;
 
-        return subject;
+        return "Application Status Update for Referred Candidate: " + candidateName;
     }
 
     private String getTemplateOfCandidateForCurrentStatus(String currentStatus, String candidateName) {
+
         String greeting = "Hello " + candidateName + ",\n\n";
         String content = switch (currentStatus.toUpperCase()) {
             case "SELECT" -> "Congratulations! You have been selected for the position.";
@@ -598,65 +672,118 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     private String getTemplateOfReferrer(String interviewStatus, String candidateName) {
+
+        interviewStatus = interviewStatus.toUpperCase();
         String greeting = "Hello Referrer,\n\n";
-        String content = switch (interviewStatus.toUpperCase()) {
-            case "CODELYSER SELECT" -> "We are pleased to inform you that the candidate you referred, " +
-                    candidateName + ", has passed the Codelyser assessment test and has been selected for the next round.";
-            case "R1 SELECT" -> "Great news! The candidate you referred, " + candidateName +
-                    ", has successfully passed Round 1 of the interview and has been selected for the next round.";
-            case "R2 SELECT" -> "Exciting news! The candidate you referred, " + candidateName +
-                    ", has passed Round 2 of the interview and has been selected for the next round.";
-            case "R3 SELECT" -> "Congratulations! The candidate you referred, " + candidateName +
-                    ", has passed Round 3 of the interview.";
-            case "CODELYSER REJECT", "R1 REJECT", "R2 REJECT", "R3 REJECT" ->
-                    "We regret to inform you that the candidate you referred, " +
-                            candidateName + ", did not pass the assessment/interview and won't be moving forward.";
-            default -> "The status of the candidate you referred, " +
-                    candidateName + ", has been updated. Please check the candidate's status.";
-        };
+
+        String round = extractRound(interviewStatus);
+        String action = extractAction(interviewStatus);
+        String content = generateTemplate(round, action, candidateName, false);
 
         return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String extractRound(String status) {
+        // Extract round from the status (assuming round is the first part before the space)
+        return status.split("\\s+")[0];
+    }
+
+    private String extractAction(String status) {
+        // Extract action (select/reject) from the status (assuming it is the second part after the space)
+        return status.split("\\s+")[1];
+    }
+
+    private String generateTemplate(String round, String action, String candidateName, boolean forCandidate) {
+
+        if (round.startsWith("R")) {
+            int numericRound = convertRoundToNumeric(round);
+
+            if ("SELECT".equals(action)) {
+                if(forCandidate)
+                    return "Congratulations on passing round " + Integer.toString(numericRound) + " of the interview";
+                else
+                    return "Great news! The candidate you referred, " + candidateName +
+                            " has successfully passed Round " + Integer.toString(numericRound) + " of the interview";
+            } else if ("REJECT".equals(action)) {
+                if(forCandidate)
+                    return "Sorry, you have been rejected in round " + Integer.toString(numericRound) + " of the interview";
+                else
+                    return "We regret to inform you that the candidate you referred, " +
+                            candidateName + ", did not pass the round "+ Integer.toString(numericRound) + " of the interview and won't be moving forward.";
+
+            } else {
+                return "Unknown action";
+            }
+        } else if ("CODELYSER".equals(round)) {
+            if ("SELECT".equals(action)) {
+                if(forCandidate)
+                    return "Congratulations on passing the Codelyser assesment test";
+                else
+                    return "We are pleased to inform you that the candidate you referred, " +
+                            candidateName + ", has passed the Codelyser assessment test";
+            } else if ("REJECT".equals(action)) {
+                if(forCandidate)
+                    return "Sorry, you have been rejected in the Codelyser assessment test";
+                else
+                    return "We regret to inform you that the candidate you referred, " +
+                            candidateName + ", did not pass the Codelyser assesment and won't be moving forward.";
+            } else {
+                return "Unknown action";
+            }
+        } else {
+            return "Unknown round";
+        }
+    }
+
+    private int convertRoundToNumeric(String round) {
+        try {
+            return Integer.parseInt(round.substring(1));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private String getSubjectOfReferrer(String interviewStatus, String candidateName) {
-        String subject = "Candidate Status Update for " + candidateName;
+        interviewStatus = interviewStatus.toUpperCase();
+        String action = extractAction(interviewStatus);
 
-        return subject;
+        return generateSubject(action, candidateName, false);
     }
 
     private String getTemplateOfCandidate(String interviewStatus, String candidateName) {
+
+        interviewStatus = interviewStatus.toUpperCase();
         String greeting = "Hello "+candidateName+",\n\n";
-        String content = switch (interviewStatus.toUpperCase()) {
-            case "CODELYSER SELECT" ->
-                    "Congratulations on passing the Codelyser assessment test! You have been selected for the next round.";
-            case "R1 SELECT" ->
-                    "Congratulations on passing Round 1 of the interview! You have been selected for the next round.";
-            case "R2 SELECT" ->
-                    "Congratulations on passing Round 2 of the interview! You have been selected for the next round.";
-            case "R3 SELECT" ->
-                    "Congratulations on passing Round 3 of the interview! You have been selected for the next round.";
-            case "CODELYSER REJECT" ->
-                    "We appreciate your effort, but unfortunately, you did not pass the Codelyser assessment test.";
-            case "R1 REJECT" ->
-                    "We appreciate your effort, but unfortunately, you did not pass Round 1 of the interview.";
-            case "R2 REJECT" ->
-                    "We appreciate your effort, but unfortunately, you did not pass Round 2 of the interview.";
-            case "R3 REJECT" ->
-                    "We appreciate your effort, but unfortunately, you did not pass Round 3 of the interview.";
-            default -> "Your interview status has been updated.";
-        };
+
+        String round = extractRound(interviewStatus);
+        String action = extractAction(interviewStatus);
+        String content = generateTemplate(round, action, candidateName, true);
 
         return greeting + content + "\n\nBest regards,\nThe Interview Team";
     }
 
-    private String getSubjectOfCandidate(String interviewStatus) {
-        return switch (interviewStatus.toUpperCase()) {
-            case "CODELYSER SELECT", "R1 SELECT", "R2 SELECT", "R3 SELECT" ->
-                    "Congratulations! You have been selected for the next round";
-            case "CODELYSER REJECT", "R1 REJECT", "R2 REJECT", "R3 REJECT" ->
-                    "We appreciate your effort, but we won't be moving forward";
-            default -> "Interview Status Update";
-        };
+    private String getSubjectOfCandidate(String interviewStatus, String candidateName) {
+        interviewStatus = interviewStatus.toUpperCase();
+        String action = extractAction(interviewStatus);
+
+        return generateSubject(action, candidateName, true);
+    }
+
+    private String generateSubject(String action, String candidateName, boolean forCandidate) {
+        if ("SELECT".equals(action)) {
+            if(forCandidate)
+                return "Congratulations! You have been selected for the next round";
+            else
+                return "Candidate Status Update for " + candidateName;
+        } else if ("REJECT".equals(action)) {
+            if(forCandidate)
+                return "We appreciate your effort, but we won't be moving forward";
+            else
+                return "Candidate Status Update for " + candidateName;
+
+        } else {
+            return "Unknown action";
+        }
     }
 
     private double calculateBonus(String band) {

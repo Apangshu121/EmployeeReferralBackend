@@ -22,8 +22,15 @@ public class AdminController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Map<String, Object>> getAllUsers() {
-        return adminService.getAllUsers();
+    public ResponseEntity<Map<String, Object>> getAllUsers(@RequestParam(value = "keyword", required = false) String keyword) {
+        if (keyword != null && !keyword.isEmpty()) {
+            // If a search keyword is provided, return the products that match the name
+            return adminService.searchUsers(keyword);
+        } else {
+            // If no search keyword, return all products
+            return adminService.getAllUsers();
+        }
+
     }
 
     @PutMapping("/modify/{userEmail}")

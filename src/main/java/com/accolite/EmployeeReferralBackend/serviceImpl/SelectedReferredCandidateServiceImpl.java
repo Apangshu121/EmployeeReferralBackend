@@ -42,22 +42,6 @@ public class SelectedReferredCandidateServiceImpl implements SelectedReferredCan
         }
     }
 
-//    @Override
-//    public ResponseEntity<Map<String, Object>> getSelectedReferredCandidateById(Long id) {
-//        try{
-//            Map<String, Object> responseJson = new HashMap<>();
-//            Optional<SelectedReferredCandidate> selectedReferredCandidate = selectedReferredCandidateRepository.findById(id);
-//
-//            selectedReferredCandidate.ifPresent(candidate -> responseJson.put("candidate", candidate));
-//
-//            return ResponseEntity.ok(responseJson);
-//        }catch (Exception e){
-//            Map<String, Object> errorMap = new HashMap<>();
-//            errorMap.put("status", "error");
-//            errorMap.put("message", "An error occurred");
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
-//        }
-//    }
 
     @Override
     public ResponseEntity<Map<String,Object>> allocateBonusToUser(Long candidateId)

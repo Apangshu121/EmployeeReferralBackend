@@ -16,7 +16,6 @@ public class ReferredCandidateDTO {
 
     private Long id;
     private String primarySkill;
-    private Set<String> secondarySkills;
     private String candidateName;
     private double experience;
     private long contactNumber;
