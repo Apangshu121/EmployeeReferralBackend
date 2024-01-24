@@ -9,7 +9,6 @@ import java.util.Map;
 public interface UserService {
    ResponseEntity<Map<String,Object>> getDetailsOfUser(String token);
 
-//   ResponseEntity<Map<String,Object>> getReferralTallyOfUser();
-//
-//   ResponseEntity<Map<String,Object>> getAllReferralTally();
+   ResponseEntity<Map<String,Object>> getReferralTallyOfUser(String token);
+
 }
