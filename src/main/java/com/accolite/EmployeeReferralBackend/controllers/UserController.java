@@ -15,17 +15,17 @@ public class UserController {
     UserService userService;
 
     @GetMapping("/getUserDetails")
-    public ResponseEntity<Map<String, Object>> getDetailsOfUser() {
-        return userService.getDetailsOfUser();
+    public ResponseEntity<Map<String, Object>> getDetailsOfUser(@RequestParam(value = "token", required = false) String token) {
+        return userService.getDetailsOfUser(token);
     }
 
-    @GetMapping("/getReferralTally")
-    public ResponseEntity<Map<String,Object>> getReferralTallyOfUser(){
-        return userService.getReferralTallyOfUser();
-    }
-
-    @GetMapping("/getAllReferralsTally")
-    public ResponseEntity<Map<String,Object>> getAllReferralTally(){
-        return userService.getAllReferralTally();
-    }
+//    @GetMapping("/getReferralTally")
+//    public ResponseEntity<Map<String,Object>> getReferralTallyOfUser(){
+//        return userService.getReferralTallyOfUser();
+//    }
+//
+//    @GetMapping("/getAllReferralsTally")
+//    public ResponseEntity<Map<String,Object>> getAllReferralTally(){
+//        return userService.getAllReferralTally();
+//    }
 }

@@ -5,6 +5,7 @@ import com.accolite.EmployeeReferralBackend.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,8 +14,6 @@ import java.util.Optional;
 @Repository
 public interface ReferredCandidateRepository extends JpaRepository<ReferredCandidate, Integer>, JpaSpecificationExecutor<ReferredCandidate> {
 
-    Optional<ReferredCandidate> findByPanNumber(String panNumber);
-
     List<ReferredCandidate> findByExperienceGreaterThanEqual(int experience);
 
     List<ReferredCandidate> findByPreferredLocation(String preferredLocation);
@@ -22,7 +21,10 @@ public interface ReferredCandidateRepository extends JpaRepository<ReferredCandi
     @Query("SELECT r FROM ReferredCandidate r WHERE r.noticePeriodLeft <= :noticePeriodLeft")
     List<ReferredCandidate> findByNoticePeriodLeftLessThanOrEqual(int noticePeriodLeft);
 
-    // List<ReferredCandidate> findByReferrerEmail(String emailId);
+     List<ReferredCandidate> findByReferrerEmail(String referrerEmail);
+
+    @Query("SELECT c FROM ReferredCandidate c WHERE c.contactNumber = :contactNumber AND c.candidateEmail = :candidateEmail")
+    List<ReferredCandidate> findByContactNumberAndCandidateEmail(@Param("contactNumber") long contactNumber, @Param("candidateEmail") String candidateEmail);
 
 }
 

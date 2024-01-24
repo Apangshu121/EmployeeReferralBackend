@@ -7,6 +7,7 @@ import com.accolite.EmployeeReferralBackend.models.User;
 import com.accolite.EmployeeReferralBackend.repository.UserRepository;
 import com.accolite.EmployeeReferralBackend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,9 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     JwtService jwtService;
 
-    private final String googleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
+    @Value("${googleUrl}")
+    private String googleTokenInfoUrl;
+
     @Override
     public ResponseEntity<Map<String, Object>> saveUser(String googleToken) {
         try {
@@ -54,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
         RestTemplate restTemplate = new RestTemplate();
         //  System.out.println(googleToken);
         String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + googleToken;
+        System.out.println(tokenInfoUrl);
         ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
 
         // System.out.println(response.getBody().getEmail()); To get the email
@@ -65,17 +69,11 @@ public class AuthServiceImpl implements AuthService {
             User user = userRepository.findByEmail(email)
                     .orElse(null);
 
-            if(user==null){
-                User userEntry = new User();
-                userEntry.setEmail(response.getBody().getEmail());
-                userEntry.setName(response.getBody().getName());
-                userEntry.setRole(Role.EMPLOYEE);
-                userEntry.setActive(true);
-                jwtToken = jwtService.generateToken(userRepository.save(userEntry));
-            }else{
+            if(user!=null){
                 jwtToken = jwtService.generateToken(user);
+            } else {
+                jwtToken = "NO TOKEN";
             }
-
         }else{
             return null;
         }

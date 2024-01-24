@@ -1,6 +1,7 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.ReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.models.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,15 +20,15 @@ public class ReferredCandidateController {
 
 
     @PostMapping("/add")
-    public ResponseEntity<Map<String,Object>> addReferredCandidate(@RequestBody ReferredCandidate referredCandidate) {
-        return referredCandidateService.addReferredCandidate(referredCandidate);
+    public ResponseEntity<Map<String,Object>> addReferredCandidate(@RequestBody ReferredCandidateRequestDTO referredCandidateRequestDTO) {
+        return referredCandidateService.addReferredCandidate(referredCandidateRequestDTO);
 
     }
 
     @GetMapping("/getAllCandidatesOfUser")
-    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser()
+    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(@RequestParam(value = "token", required = false) String token)
     {
-        return referredCandidateService.getReferredCandidatesOfUser();
+        return referredCandidateService.getReferredCandidatesOfUser(token);
     }
 
     @GetMapping("/getAll")
@@ -47,7 +48,9 @@ public class ReferredCandidateController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Map<String,Object>> updateReferredCandidate(@PathVariable int id, @RequestBody UpdateReferredCandidateRequestDTO referredCandidate){ return referredCandidateService.updateReferredCandidate(id, referredCandidate);}
+    public ResponseEntity<Map<String,Object>> updateReferredCandidate(@PathVariable int id, @RequestBody UpdateReferredCandidateRequestDTO referredCandidate){
+        return referredCandidateService.updateReferredCandidate(id, referredCandidate);
+    }
 
     @GetMapping("/filterByExperience/{experience}")
     public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(
