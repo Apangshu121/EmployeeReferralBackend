@@ -16,8 +16,8 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
-@ToString(exclude = {"referredCandidates"})
-@EqualsAndHashCode(exclude = {"referredCandidates"})
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
@@ -31,12 +31,8 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     private Role role;
-    private double totalBonus;
     private boolean isActive;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonManagedReference
-    Set<ReferredCandidate> referredCandidates = new HashSet<>();
+    private String businessUnit;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

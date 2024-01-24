@@ -29,10 +29,9 @@ public class PdfController {
     public ResponseEntity<String> extractInfo(@RequestParam("pdfFile") MultipartFile pdfFile) {
         try {
             List<String> blacklistedCompanies = googleSheetsService.readSheet();
-//
+
             blacklistedCompanies.remove(0);
             String pdfText = PdfUtils.extractTextFromPdf(pdfFile);
-            //  System.out.println(pdfText);
             for(String blacklistCompany:blacklistedCompanies)
             {
                 if(pdfText.trim().toLowerCase().contains(blacklistCompany.trim().toLowerCase())){

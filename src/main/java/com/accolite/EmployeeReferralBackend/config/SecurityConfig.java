@@ -22,9 +22,8 @@ public class SecurityConfig {
     @Autowired
     AuthenticationProvider authenticationProvider;
 
-    private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo"};
+    private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo", "/api/referredCandidates/getAllCandidatesOfUser", "/user/getUserDetails", "/api/referredCandidates/add","/user/getReferralTally"};
 
-    private static final String[] AUTHENTICATED_LIST_URL = {"/user/getUserDetails", "/api/referredCandidates/add","/api/referredCandidates/getAllCandidatesOfUser","/user/getReferralTally"};
     private static final String[] RECRUITER_LIST_URL = {"/api/referredCandidates/getAll",
             "/api/referredCandidates/get/**",
             "/api/selectedReferredCandidates/allocateBonus/**",
@@ -51,7 +50,6 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(req->req.requestMatchers(WHITE_LIST_URL)
                         .permitAll()
-                        .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","SENIOR","ADMIN")
                         .requestMatchers(RECRUITER_LIST_URL).hasAuthority("RECRUITER")
                         .requestMatchers(ADMIN_LIST_URL).hasAuthority("ADMIN")
                         .anyRequest()
