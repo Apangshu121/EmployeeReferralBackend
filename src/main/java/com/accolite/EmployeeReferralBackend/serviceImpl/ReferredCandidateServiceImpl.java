@@ -46,34 +46,14 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     @Value("${spring.mail.username}")
     private String fromMail;
 
-    public ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidateRequestDTO referredCandidateRequestDTO) {
+    public ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate) {
 
         try{
 
-            String email;
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
 
-            if(referredCandidateRequestDTO.getToken()!=null)
-            {
-                RestTemplate restTemplate = new RestTemplate();
-               // System.out.println(referredCandidateRequestDTO.getToken());
-                String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + referredCandidateRequestDTO.getToken();
-                System.out.println(tokenInfoUrl);
-                ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
-                if(response.getBody()!=null) {
-                    email = response.getBody().getEmail();
-                }else{
-                    Map<String, Object> errorMap = new HashMap<>();
-                    errorMap.put("status", "error");
-                    errorMap.put("message", "Invalid Google token");
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-                }
-            }else{
-                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                email = ((UserDetails)principal).getUsername();
-            }
-
-
-            List<ReferredCandidate> existingCandidates = referredCandidateRepository.findByContactNumberAndCandidateEmail(referredCandidateRequestDTO.getContactNumber(), referredCandidateRequestDTO.getCandidateEmail());
+            List<ReferredCandidate> existingCandidates = referredCandidateRepository.findByContactNumberAndCandidateEmail(referredCandidate.getContactNumber(), referredCandidate.getCandidateEmail());
             LocalDateTime currentDateTime = LocalDateTime.now();
             LocalDateTime updatedAt = existingCandidates.stream().filter(ReferredCandidate::isActive).findFirst().map(ReferredCandidate::getUpdatedAt).orElse(null);
 
@@ -94,19 +74,19 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
                     ReferredCandidate candidate = new ReferredCandidate();
 
-                    candidate.setPrimarySkill(referredCandidateRequestDTO.getPrimarySkill());
-                    candidate.setCandidateName(referredCandidateRequestDTO.getCandidateName());
-                    candidate.setExperience(referredCandidateRequestDTO.getExperience());
-                    candidate.setContactNumber(referredCandidateRequestDTO.getContactNumber());
-                    candidate.setCandidateEmail(referredCandidateRequestDTO.getCandidateEmail());
-                    candidate.setWillingToRelocate(referredCandidateRequestDTO.isWillingToRelocate());
-                    candidate.setPreferredLocation(referredCandidateRequestDTO.getPreferredLocation());
-                    candidate.setNoticePeriod(referredCandidateRequestDTO.getNoticePeriod());
-                    candidate.setProfileSource(referredCandidateRequestDTO.getProfileSource());
-                    candidate.setVouch(referredCandidateRequestDTO.isVouch());
-                    candidate.setNoticePeriodLeft(referredCandidateRequestDTO.getNoticePeriodLeft());
-                    candidate.setServingNoticePeriod(referredCandidateRequestDTO.isServingNoticePeriod());
-                    candidate.setOfferInHand(referredCandidateRequestDTO.isOfferInHand());
+                    candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
+                    candidate.setCandidateName(referredCandidate.getCandidateName());
+                    candidate.setExperience(referredCandidate.getExperience());
+                    candidate.setContactNumber(referredCandidate.getContactNumber());
+                    candidate.setCandidateEmail(referredCandidate.getCandidateEmail());
+                    candidate.setWillingToRelocate(referredCandidate.isWillingToRelocate());
+                    candidate.setPreferredLocation(referredCandidate.getPreferredLocation());
+                    candidate.setNoticePeriod(referredCandidate.getNoticePeriod());
+                    candidate.setProfileSource(referredCandidate.getProfileSource());
+                    candidate.setVouch(referredCandidate.isVouch());
+                    candidate.setNoticePeriodLeft(referredCandidate.getNoticePeriodLeft());
+                    candidate.setServingNoticePeriod(referredCandidate.isServingNoticePeriod());
+                    candidate.setOfferInHand(referredCandidate.isOfferInHand());
                     candidate.setActive(true);
                     candidate.setReferrerEmail(email);
                     candidate.setUpdatedAt(LocalDateTime.now());
@@ -134,32 +114,13 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String token){
 
         try{
-            String email;
-
-            if(token!=null)
-            {
-                RestTemplate restTemplate = new RestTemplate();
-                // System.out.println(referredCandidateRequestDTO.getToken());
-                String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + token;
-                System.out.println(tokenInfoUrl);
-                ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
-                if(response.getBody()!=null) {
-                    email = response.getBody().getEmail();
-                }else{
-                    Map<String, Object> errorMap = new HashMap<>();
-                    errorMap.put("status", "error");
-                    errorMap.put("message", "Invalid Google token");
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-                }
-            }else{
-                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                email = ((UserDetails)principal).getUsername();
-            }
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
 
             List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByReferrerEmail(email);
 
             List<ReferredCandidateDTO> referredCandidateDTOS = referredCandidates.stream()
-                    .map(referredCandidate -> mapToReferredCandidateDTO(referredCandidate))
+                    .map(this::mapToReferredCandidateDTO)
                     .toList();
             Map<String,Object> referredCandidatesJson = new HashMap<>();
 
@@ -204,7 +165,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
         try{
             Map<String,Object> responseJson = new HashMap<>();
-            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAll();
+            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAllByOrderByUpdatedAtDesc();
             List<ReferredCandidateDTO> referredCandidateDTOS = allReferredCandidates.stream()
                     .map(this::mapToReferredCandidateDTO)
                     .toList();

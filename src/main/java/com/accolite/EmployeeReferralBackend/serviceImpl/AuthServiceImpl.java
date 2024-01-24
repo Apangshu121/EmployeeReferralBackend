@@ -57,10 +57,8 @@ public class AuthServiceImpl implements AuthService {
         RestTemplate restTemplate = new RestTemplate();
         //  System.out.println(googleToken);
         String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + googleToken;
-        System.out.println(tokenInfoUrl);
         ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
 
-        // System.out.println(response.getBody().getEmail()); To get the email
         String jwtToken;
 
         if(response.getBody()!=null)
@@ -69,11 +67,17 @@ public class AuthServiceImpl implements AuthService {
             User user = userRepository.findByEmail(email)
                     .orElse(null);
 
-            if(user!=null){
+            if(user==null){
+                User userEntry = new User();
+                userEntry.setEmail(response.getBody().getEmail());
+                userEntry.setName(response.getBody().getName());
+                userEntry.setRole(Role.EMPLOYEE);
+                userEntry.setActive(true);
+                jwtToken = jwtService.generateToken(userRepository.save(userEntry));
+            }else{
                 jwtToken = jwtService.generateToken(user);
-            } else {
-                jwtToken = "NO TOKEN";
             }
+
         }else{
             return null;
         }

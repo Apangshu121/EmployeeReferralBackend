@@ -32,36 +32,17 @@ public class UserServiceImpl implements UserService {
     private String googleTokenInfoUrl;
 
     @Override
-    public ResponseEntity<Map<String, Object>> getDetailsOfUser(String token) {
+    public ResponseEntity<Map<String, Object>> getDetailsOfUser() {
         try{
 
-            Map<String,Object> responseMap = new HashMap<>();
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
 
-            if(token!=null)
-            {
-                RestTemplate restTemplate = new RestTemplate();
-                // System.out.println(referredCandidateRequestDTO.getToken());
-                String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + token;
-                System.out.println(tokenInfoUrl);
-                ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
-                if(response.getBody()!=null) {
-                    String name = response.getBody().getName();
-                    responseMap.put("name",name);
-                    responseMap.put("role", "EMPLOYEE");
-                }else{
-                    Map<String, Object> errorMap = new HashMap<>();
-                    errorMap.put("status", "error");
-                    errorMap.put("message", "Invalid Google token");
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-                }
-            }else{
-                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                String email = ((UserDetails)principal).getUsername();
-                User user = userRepository.findByEmail(email).orElseThrow();
-                String name = user.getName();
-                responseMap.put("name",name);
-                responseMap.put("role", user.getRole());
-            }
+            User user = userRepository.findByEmail(email).orElseThrow();
+
+            Map<String,Object> responseMap = new HashMap<>();
+            responseMap.put("name",user.getName());
+            responseMap.put("role", user.getRole());
 
             return ResponseEntity.ok(responseMap);
         }catch (Exception e){
@@ -73,39 +54,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<Map<String, Object>> getReferralTallyOfUser(String token) {
+    public ResponseEntity<Map<String, Object>> getReferralTallyOfUser() {
         try{
 
-            String email="";
-            String name="";
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
 
-            if(token!=null)
-            {
-                RestTemplate restTemplate = new RestTemplate();
-                String tokenInfoUrl = googleTokenInfoUrl + "?id_token=" + token;
-                System.out.println(tokenInfoUrl);
-                ResponseEntity<GoogleTokenPayload> response = restTemplate.getForEntity(tokenInfoUrl, GoogleTokenPayload.class);
-                if(response.getBody()!=null) {
-                    email = response.getBody().getEmail();
-                    name = response.getBody().getName();
-                }else{
-                    Map<String, Object> errorMap = new HashMap<>();
-                    errorMap.put("status", "error");
-                    errorMap.put("message", "Invalid Google token");
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-                }
-            }else{
-                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                email = ((UserDetails)principal).getUsername();
-                User user = userRepository.findByEmail(email).orElseThrow();
-                name = user.getName();
-            }
+            User user = userRepository.findByEmail(email).orElseThrow();
 
             List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByReferrerEmail(email);
 
             ReferralTallyDTO referralTallyDTO = updateTally(referredCandidates);
 
-            referralTallyDTO.setName(name);
+            referralTallyDTO.setName(user.getName());
 
             Map<String,Object> responseMap = new HashMap<>();
 
@@ -118,6 +79,55 @@ public class UserServiceImpl implements UserService {
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> getAllReferralTally() {
+        try{
+
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
+
+            User user = userRepository.findByEmail(email).orElseThrow();
+            List<ReferredCandidate> referredCandidateList = referredCandidateRepository.findAll();
+
+            List<ReferralTallyDTO> referralTallyDTOS = calculateTally(referredCandidateList);
+
+            Map<String,Object> responseMap = new HashMap<>();
+
+            responseMap.put("Tally", referralTallyDTOS);
+
+            return ResponseEntity.ok(responseMap);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+    public List<ReferralTallyDTO> calculateTally(List<ReferredCandidate> candidates) {
+
+        List<User> users = userRepository.findAll();
+
+        Map<String, List<ReferredCandidate>> candidatesByReferrer = candidates.stream()
+                .collect(Collectors.groupingBy(ReferredCandidate::getReferrerEmail));
+
+        return candidatesByReferrer.entrySet().stream()
+                .map(entry -> {
+                    ReferralTallyDTO tally = updateTally(entry.getValue());
+                    String email = entry.getKey();
+                    tally.setName(findReferrerName(email, users));
+                    return tally;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private String findReferrerName(String referrerEmail, List<User> users) {
+        return users.stream()
+                .filter(user -> referrerEmail.equals(user.getEmail()))
+                .map(User::getName)
+                .findFirst()
+                .orElse("Unknown"); // Default to "Unknown" if the name is not found
     }
 
     private ReferralTallyDTO updateTally(List<ReferredCandidate> referredCandidates) {
