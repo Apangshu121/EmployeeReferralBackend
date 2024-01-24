@@ -77,12 +77,12 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             LocalDateTime currentDateTime = LocalDateTime.now();
             LocalDateTime updatedAt = existingCandidates.stream().filter(ReferredCandidate::isActive).findFirst().map(ReferredCandidate::getUpdatedAt).orElse(null);
 
-            if (!existingCandidates.isEmpty() && currentDateTime.isBefore(updatedAt.plus(30, ChronoUnit.SECONDS))) {
+            if (!existingCandidates.isEmpty() && currentDateTime.isBefore(updatedAt.plus(6, ChronoUnit.MONTHS))) {
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
                 errorMap.put("message", "The candidate has been referred within the last 6 months");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-            }else if(!existingCandidates.isEmpty() && currentDateTime.isAfter(updatedAt.plus(30, ChronoUnit.SECONDS)) && existingCandidates.size()==3){
+            }else if(!existingCandidates.isEmpty() && currentDateTime.isAfter(updatedAt.plus(6, ChronoUnit.MONTHS)) && existingCandidates.size()==3){
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
                 errorMap.put("message", "The candidate has already been referred 3 times");
