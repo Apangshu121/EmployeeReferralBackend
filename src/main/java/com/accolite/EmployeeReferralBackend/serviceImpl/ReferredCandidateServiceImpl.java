@@ -1,5 +1,7 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
+import com.accolite.EmployeeReferralBackend.dtos.ReferredCandidateDTO;
+import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.models.*;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateHistoryRepository;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
@@ -101,9 +103,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     candidate.setResume(pdfBytes);
                     candidate.setFileName(referredCandidate.getFileName());
                     candidate.setUpdatedAt(LocalDateTime.now());
-
-                System.out.println(Arrays.toString(pdfBytes));
-                System.out.println(referredCandidate.getFileName());
+                    candidate.setBlacklisted(referredCandidate.isBlacklisted());
 
                     referredCandidateRepository.save(candidate);
                     // System.out.println(user);
@@ -199,7 +199,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
         try{
             Map<String,Object> responseJson = new HashMap<>();
-            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAllByOrderByUpdatedAtDesc();
+            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAll();
             List<ReferredCandidateDTO> referredCandidateDTOS = allReferredCandidates.stream()
                     .map(this::mapToReferredCandidateDTO)
                     .toList();
@@ -242,9 +242,37 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     @Override
     public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(String status) {
         try {
-            List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatus(status);
+            List<ReferredCandidateDTO> referredCandidateDTOS = getReferredCandidatesByInterviewStatusUtil(status);
             Map<String, Object> responseMap = new HashMap<>();
-            responseMap.put("users", referredCandidates);
+            responseMap.put("filteredCandidates", referredCandidateDTOS);
+            return ResponseEntity.ok(responseMap);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    private List<ReferredCandidateDTO> getReferredCandidatesByInterviewStatusUtil(String status) {
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatus(status);
+
+        return filteredCandidates.stream()
+                .map(this::mapToReferredCandidateDTO)
+                .toList();
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatusAndSearch(String status, String keyword) {
+        try{
+            List<ReferredCandidateDTO> referredCandidateDTOS = getReferredCandidatesByInterviewStatusUtil(status);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("filteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseMap);
         }catch (Exception e){
             Map<String, Object> errorMap = new HashMap<>();

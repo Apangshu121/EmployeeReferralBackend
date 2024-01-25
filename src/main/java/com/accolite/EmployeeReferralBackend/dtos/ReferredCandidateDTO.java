@@ -1,5 +1,7 @@
-package com.accolite.EmployeeReferralBackend.models;
+package com.accolite.EmployeeReferralBackend.dtos;
 
+import com.accolite.EmployeeReferralBackend.models.InterviewStatus;
+import com.accolite.EmployeeReferralBackend.models.ReferredCandidateHistory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

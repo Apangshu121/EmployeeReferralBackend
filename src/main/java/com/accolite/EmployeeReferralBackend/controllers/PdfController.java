@@ -36,11 +36,11 @@ public class PdfController {
 
             blacklistedCompanies.remove(0);
             String pdfText = PdfUtils.extractTextFromPdf(pdfFile);
+            boolean isBlacklisted = false;
             for(String blacklistCompany:blacklistedCompanies)
             {
                 if(pdfText.trim().toLowerCase().contains(blacklistCompany.trim().toLowerCase())){
-                    String errorResponse = "{\"error\":\"The candidate cannot be referred. Please contact administrator\"}";
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+                    isBlacklisted = true;
                 }
             }
 
@@ -48,7 +48,8 @@ public class PdfController {
 
             String fileName = fileStorageService.storeInMemory(pdfFile);
             resumeData.setFilename(fileName);
-         //   System.out.println(Arrays.toString(fileStorageService.getFromMemory(fileName)));
+            resumeData.setBlacklisted(isBlacklisted);
+
             // Convert ResumeData to JSON
             ObjectMapper objectMapper = new ObjectMapper();
             String jsonResumeData = objectMapper.writeValueAsString(resumeData);

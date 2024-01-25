@@ -1,13 +1,12 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
-import com.accolite.EmployeeReferralBackend.models.AdminUpdateDTO;
+import com.accolite.EmployeeReferralBackend.dtos.AdminUpdateDTO;
 import com.accolite.EmployeeReferralBackend.models.User;
 import com.accolite.EmployeeReferralBackend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController

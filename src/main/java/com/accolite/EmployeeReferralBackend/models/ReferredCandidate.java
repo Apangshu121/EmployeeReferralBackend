@@ -53,6 +53,7 @@ public class ReferredCandidate{
     private byte[] resume;
 
     private String fileName;
+    private boolean blacklisted;
 
     @OneToMany(mappedBy = "referredCandidate", cascade = CascadeType.ALL)
     @JsonManagedReference

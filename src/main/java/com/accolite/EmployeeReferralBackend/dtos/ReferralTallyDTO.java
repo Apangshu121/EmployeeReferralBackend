@@ -1,4 +1,4 @@
-package com.accolite.EmployeeReferralBackend.models;
+package com.accolite.EmployeeReferralBackend.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
+public class ReferralTallyDTO {
 
-    private Long id;
-    private String email;
     private String name;
-    private String role;
+    private int totalReferrals;
+    private int select;
+    private int reject;
+    private int inProgress;
 }
-

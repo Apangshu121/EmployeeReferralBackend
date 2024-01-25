@@ -1,16 +1,15 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
-import com.accolite.EmployeeReferralBackend.models.ReferredCandidateRequestDTO;
-import com.accolite.EmployeeReferralBackend.models.UpdateReferredCandidateRequestDTO;
+import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -54,40 +53,50 @@ public class ReferredCandidateController {
         return referredCandidateService.updateReferredCandidate(id, referredCandidate);
     }
 
-    @GetMapping("/filterByExperience/{experience}")
+    @GetMapping("/filter/{condition}/{filterValue}")
     public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(
-            @PathVariable int experience, @RequestParam(value = "keyword", required = false) String keyword) {
-        if (keyword == null) {
-            // If a search keyword is provided, return the products that match the name
-            return referredCandidateService.filterCandidatesByExperience(experience);
-        } else {
-            // If no search keyword, return all products
-            return referredCandidateService.filterCandidatesByExperienceAndSearch(experience, keyword);
-        }
-    }
-    @GetMapping("/filterByPreferredLocation/{preferredLocation}")
-    public ResponseEntity<Map<String,Object>> filterCandidatesByPreferredLocation(
-            @PathVariable String preferredLocation, @RequestParam(value = "keyword", required = false) String keyword) {
+            @PathVariable String condition, @PathVariable String filterValue, @RequestParam(value = "keyword", required = false) String keyword) {
 
-        if (keyword == null) {
-            // If a search keyword is provided, return the products that match the name
-            return referredCandidateService.filterCandidatesByPreferredLocation(preferredLocation);
-        } else {
-            // If no search keyword, return all products
-            return referredCandidateService.filterCandidatesByPreferredLocationAndSearch(preferredLocation, keyword);
-        }
-    }
-
-    @GetMapping("/filterByNoticePeriod/{noticePeriod}")
-    public ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriod(
-            @PathVariable int noticePeriod, @RequestParam(value = "keyword", required = false) String keyword) {
-
-        if (keyword == null) {
-            // If a search keyword is provided, return the products that match the name
-            return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqual(noticePeriod);
-        } else {
-            // If no search keyword, return all products
-            return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(noticePeriod, keyword);
+        if(condition.equalsIgnoreCase("experience"))
+        {
+            if (keyword == null) {
+                // If a search keyword is provided, return the products that match the name
+                return referredCandidateService.filterCandidatesByExperience(Integer.parseInt(filterValue));
+            } else {
+                // If no search keyword, return all products
+                return referredCandidateService.filterCandidatesByExperienceAndSearch(Integer.parseInt(filterValue), keyword);
+            }
+        }else if(condition.equalsIgnoreCase("preferredLocation"))
+        {
+            if (keyword == null) {
+                // If a search keyword is provided, return the products that match the name
+                return referredCandidateService.filterCandidatesByPreferredLocation(filterValue);
+            } else {
+                // If no search keyword, return all products
+                return referredCandidateService.filterCandidatesByPreferredLocationAndSearch(filterValue, keyword);
+            }
+        }else if(condition.equalsIgnoreCase("noticePeriod"))
+        {
+            if (keyword == null) {
+                // If a search keyword is provided, return the products that match the name
+                return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqual(Integer.parseInt(filterValue));
+            } else {
+                // If no search keyword, return all products
+                return referredCandidateService.filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(Integer.parseInt(filterValue), keyword);
+            }
+        }else if(condition.equalsIgnoreCase("interviewStatus"))
+        {
+            if(keyword == null)
+            {
+                return referredCandidateService.getReferredCandidatesByInterviewStatus(filterValue);
+            }else{
+                return referredCandidateService.getReferredCandidatesByInterviewStatusAndSearch(filterValue, keyword);
+            }
+        }else{
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
 
@@ -99,9 +108,5 @@ public class ReferredCandidateController {
     @GetMapping("/download/{id}")
     public ResponseEntity<InputStreamResource> downloadResume(@PathVariable int id) {
         return referredCandidateService.downloadResume(id);
-    }
-    @GetMapping("/by-interview-status/{status}")
-    public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(@PathVariable String status) {
-        return referredCandidateService.getReferredCandidatesByInterviewStatus(status);
     }
 }

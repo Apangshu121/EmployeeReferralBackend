@@ -15,4 +15,5 @@ public class ResumeData {
     private String experience;
     private String primarySkill;
     private String filename;
+    private boolean isBlacklisted;
 }
