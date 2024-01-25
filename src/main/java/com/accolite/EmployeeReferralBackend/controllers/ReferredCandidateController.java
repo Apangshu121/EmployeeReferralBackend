@@ -93,4 +93,8 @@ public class ReferredCandidateController {
     public ResponseEntity<Map<String,Object>> sendMail(@PathVariable int id){
         return referredCandidateService.sendMail(id);
     }
+    @GetMapping("/by-interview-status/{status}")
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(@PathVariable String status) {
+        return referredCandidateService.getReferredCandidatesByInterviewStatus(status);
+    }
 }
