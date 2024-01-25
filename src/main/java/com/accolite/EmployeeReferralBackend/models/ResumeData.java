@@ -14,5 +14,5 @@ public class ResumeData {
     private String phone;
     private String experience;
     private String primarySkill;
-
+    private String filename;
 }

@@ -5,6 +5,8 @@ import com.accolite.EmployeeReferralBackend.models.ReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.models.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,6 +94,11 @@ public class ReferredCandidateController {
     @PostMapping("/sendMail/{id}")
     public ResponseEntity<Map<String,Object>> sendMail(@PathVariable int id){
         return referredCandidateService.sendMail(id);
+    }
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<InputStreamResource> downloadResume(@PathVariable int id) {
+        return referredCandidateService.downloadResume(id);
     }
     @GetMapping("/by-interview-status/{status}")
     public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(@PathVariable String status) {
