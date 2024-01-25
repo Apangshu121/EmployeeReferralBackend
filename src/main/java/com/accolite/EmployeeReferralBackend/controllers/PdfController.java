@@ -1,6 +1,7 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
 import com.accolite.EmployeeReferralBackend.models.ResumeData;
+import com.accolite.EmployeeReferralBackend.service.FileStorageService;
 import com.accolite.EmployeeReferralBackend.service.GoogleSheetsService;
 import com.accolite.EmployeeReferralBackend.utils.NlpProcessor;
 import com.accolite.EmployeeReferralBackend.utils.PdfUtils;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -24,6 +26,8 @@ public class PdfController {
 
     @Autowired
     private GoogleSheetsService googleSheetsService; // Configuration class for Google Sheets API
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @PostMapping("/extractInfo")
     public ResponseEntity<String> extractInfo(@RequestParam("pdfFile") MultipartFile pdfFile) {
@@ -42,6 +46,9 @@ public class PdfController {
 
             ResumeData resumeData = NlpProcessor.extractResumeData(pdfText);
 
+            String fileName = fileStorageService.storeInMemory(pdfFile);
+            resumeData.setFilename(fileName);
+         //   System.out.println(Arrays.toString(fileStorageService.getFromMemory(fileName)));
             // Convert ResumeData to JSON
             ObjectMapper objectMapper = new ObjectMapper();
             String jsonResumeData = objectMapper.writeValueAsString(resumeData);

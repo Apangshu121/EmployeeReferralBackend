@@ -15,6 +15,8 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "referred_candidates")
+@ToString(exclude = {"interviewStatus", "referredCandidateHistory", "resume"})
+@EqualsAndHashCode(exclude = {"interviewStatus", "referredCandidateHistory", "resume"})
 public class ReferredCandidate{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -45,6 +47,12 @@ public class ReferredCandidate{
     private boolean servingNoticePeriod; // Y
     private int noticePeriodLeft; // Y
     private boolean offerInHand; // Y
+
+    @Lob
+    @Column(name = "resume", columnDefinition = "BLOB")
+    private byte[] resume;
+
+    private String fileName;
 
     @OneToMany(mappedBy = "referredCandidate", cascade = CascadeType.ALL)
     @JsonManagedReference

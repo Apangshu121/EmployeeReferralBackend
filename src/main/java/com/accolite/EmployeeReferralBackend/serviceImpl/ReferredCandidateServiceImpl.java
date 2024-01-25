@@ -4,12 +4,17 @@ import com.accolite.EmployeeReferralBackend.models.*;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateHistoryRepository;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.repository.UserRepository;
+import com.accolite.EmployeeReferralBackend.service.FileStorageService;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -17,13 +22,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
+import java.util.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 @Transactional
@@ -39,6 +44,9 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Value("${googleUrl}")
     private String googleTokenInfoUrl;
@@ -73,6 +81,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     }
 
                     ReferredCandidate candidate = new ReferredCandidate();
+                    byte[] pdfBytes = fileStorageService.getFromMemory(referredCandidate.getFileName());
 
                     candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
                     candidate.setCandidateName(referredCandidate.getCandidateName());
@@ -89,12 +98,16 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     candidate.setOfferInHand(referredCandidate.isOfferInHand());
                     candidate.setActive(true);
                     candidate.setReferrerEmail(email);
+                    candidate.setResume(pdfBytes);
+                    candidate.setFileName(referredCandidate.getFileName());
                     candidate.setUpdatedAt(LocalDateTime.now());
 
+                System.out.println(Arrays.toString(pdfBytes));
+                System.out.println(referredCandidate.getFileName());
 
                     referredCandidateRepository.save(candidate);
                     // System.out.println(user);
-
+                    fileStorageService.removeFromMemory(referredCandidate.getFileName());
                     Map<String,Object> responseMap = new HashMap<>();
                     responseMap.put("message","Referred Candidate added Successfully");
 
@@ -110,6 +123,27 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         }
     }
 
+    public ResponseEntity<InputStreamResource> downloadResume(int id) {
+        try {
+            ReferredCandidate candidate = referredCandidateRepository.findById(id).orElseThrow();
+            byte[] resume = candidate.getResume();
+
+            InputStream inputStream = new ByteArrayInputStream(resume);
+            InputStreamResource resource = new InputStreamResource(inputStream);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"resume.pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(resource);
+
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
     public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String token){
 

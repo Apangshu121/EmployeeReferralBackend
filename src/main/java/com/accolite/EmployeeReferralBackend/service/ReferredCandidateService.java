@@ -3,6 +3,8 @@ package com.accolite.EmployeeReferralBackend.service;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.models.UpdateReferredCandidateRequestDTO;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +39,6 @@ public interface ReferredCandidateService {
 
     ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(int noticePeriod, String keyword);
 
-
+    ResponseEntity<InputStreamResource> downloadResume(int id);
 }
 

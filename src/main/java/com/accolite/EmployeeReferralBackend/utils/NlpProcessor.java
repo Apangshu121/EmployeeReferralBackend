@@ -73,12 +73,11 @@ public class NlpProcessor {
 
             String primarySkill = extractPrimarySkill(text);
 
-            ResumeData resumeData= new ResumeData(name, email, phone, experience, primarySkill);
-
-            return new ResumeData(name, email, phone, experience, primarySkill);
+            return ResumeData.builder()
+                    .name(name).email(email).phone(phone).experience(experience).primarySkill(primarySkill).build();
         } else {
             // Return empty ResumeData or handle accordingly if no non-empty lines are found
-            return new ResumeData("", "", "", "0", "");
+            return new ResumeData();
         }
     }
 
