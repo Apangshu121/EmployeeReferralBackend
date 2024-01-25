@@ -1,10 +1,9 @@
 package com.accolite.EmployeeReferralBackend.service;
 
-import com.accolite.EmployeeReferralBackend.models.AdminUpdateDTO;
+import com.accolite.EmployeeReferralBackend.dtos.AdminUpdateDTO;
 import com.accolite.EmployeeReferralBackend.models.User;
 import org.springframework.http.ResponseEntity;
 
-import java.util.List;
 import java.util.Map;
 
 public interface AdminService {

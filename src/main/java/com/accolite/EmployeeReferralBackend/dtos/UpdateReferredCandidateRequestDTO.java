@@ -1,4 +1,4 @@
-package com.accolite.EmployeeReferralBackend.models;
+package com.accolite.EmployeeReferralBackend.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

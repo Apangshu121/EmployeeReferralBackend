@@ -66,10 +66,10 @@ public class NlpProcessor {
             String phone = phoneMatcher.find() ? phoneMatcher.group() : "";
 
             // Extract experience using a simple pattern
-            String experiencePattern = "\\b\\d+(\\.\\d+)?\\s?year(s)?\\b";
+            String experiencePattern = "\\b(\\d+(\\.\\d+)?)\\s?year(s)?\\b";
             Pattern experiencePatternRegex = Pattern.compile(experiencePattern);
             Matcher experienceMatcher = experiencePatternRegex.matcher(text);
-            String experience = experienceMatcher.find() ? experienceMatcher.group() : "0";
+            String experience = experienceMatcher.find() ? experienceMatcher.group(1) : "0";
 
             String primarySkill = extractPrimarySkill(text);
 

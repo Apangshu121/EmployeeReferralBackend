@@ -1,7 +1,6 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
-import com.accolite.EmployeeReferralBackend.models.GoogleTokenPayload;
-import com.accolite.EmployeeReferralBackend.models.ReferralTallyDTO;
+import com.accolite.EmployeeReferralBackend.dtos.ReferralTallyDTO;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
 import com.accolite.EmployeeReferralBackend.models.User;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;

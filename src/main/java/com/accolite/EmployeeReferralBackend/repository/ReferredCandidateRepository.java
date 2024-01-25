@@ -26,8 +26,6 @@ public interface ReferredCandidateRepository extends JpaRepository<ReferredCandi
     @Query("SELECT c FROM ReferredCandidate c WHERE c.contactNumber = :contactNumber AND c.candidateEmail = :candidateEmail")
     List<ReferredCandidate> findByContactNumberAndCandidateEmail(@Param("contactNumber") long contactNumber, @Param("candidateEmail") String candidateEmail);
 
-    List<ReferredCandidate> findAllByOrderByUpdatedAtDesc();
-
     @Query("SELECT rc FROM ReferredCandidate rc INNER JOIN rc.interviewStatus is WHERE is.currentStatus = :status")
     List<ReferredCandidate> findByInterviewStatusCurrentStatus(@Param("status") String status);
 }

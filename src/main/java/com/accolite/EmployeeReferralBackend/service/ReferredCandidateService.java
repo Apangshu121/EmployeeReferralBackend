@@ -1,14 +1,11 @@
 package com.accolite.EmployeeReferralBackend.service;
 
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
-import com.accolite.EmployeeReferralBackend.models.ReferredCandidateRequestDTO;
-import com.accolite.EmployeeReferralBackend.models.UpdateReferredCandidateRequestDTO;
+import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -41,5 +38,7 @@ public interface ReferredCandidateService {
 
     ResponseEntity<InputStreamResource> downloadResume(int id);
     ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(String status);
+
+    ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatusAndSearch(String filterValue, String keyword);
 }
 

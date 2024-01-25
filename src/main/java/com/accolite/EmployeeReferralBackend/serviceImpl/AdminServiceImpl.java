@@ -1,10 +1,10 @@
 // AdminServiceImpl.java
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
-import com.accolite.EmployeeReferralBackend.models.AdminUpdateDTO;
+import com.accolite.EmployeeReferralBackend.dtos.AdminUpdateDTO;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
 import com.accolite.EmployeeReferralBackend.models.User;
-import com.accolite.EmployeeReferralBackend.models.UserDTO;
+import com.accolite.EmployeeReferralBackend.dtos.UserDTO;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
 import com.accolite.EmployeeReferralBackend.repository.UserRepository;
 import com.accolite.EmployeeReferralBackend.service.AdminService;
@@ -60,7 +60,10 @@ public class AdminServiceImpl implements AdminService {
     {
         try {
            User existingUser = userRepository.findByEmail(email).orElseThrow();
-                existingUser.setRole(modifiedUser.getRole());
+
+                if(existingUser.getRole()!=null)
+                    existingUser.setRole(modifiedUser.getRole());
+
                 // Update other properties as needed
 
                 User savedUser = userRepository.save(existingUser);
