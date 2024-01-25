@@ -206,6 +206,22 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     @Override
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(String status) {
+        try {
+            List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatus(status);
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("users", referredCandidates);
+            return ResponseEntity.ok(responseMap);
+        }catch (Exception e){
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+
+    @Override
     public ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, UpdateReferredCandidateRequestDTO updatedReferredCandidate) {
         try {
 

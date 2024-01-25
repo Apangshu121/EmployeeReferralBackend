@@ -37,6 +37,6 @@ public interface ReferredCandidateService {
 
     ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(int noticePeriod, String keyword);
 
-
+    ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(String status);
 }
 
