@@ -39,7 +39,8 @@ public class SecurityConfig {
             "/api/referredCandidates/sendMail/**",
             "/api/selectReferredCandidateForInterview/**",
             "/api/referredCandidates/getAll",
-            "/user/getAllReferralsTally"
+            "/user/getAllReferralsTally",
+            "/api/referredCandidates/by-interview-status/**"
 
     };
 

@@ -100,4 +100,8 @@ public class ReferredCandidateController {
     public ResponseEntity<InputStreamResource> downloadResume(@PathVariable int id) {
         return referredCandidateService.downloadResume(id);
     }
+    @GetMapping("/by-interview-status/{status}")
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(@PathVariable String status) {
+        return referredCandidateService.getReferredCandidatesByInterviewStatus(status);
+    }
 }
