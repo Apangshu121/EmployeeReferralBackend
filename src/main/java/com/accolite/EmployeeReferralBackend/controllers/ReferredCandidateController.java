@@ -20,8 +20,8 @@ public class ReferredCandidateController {
 
 
     @PostMapping("/add")
-    public ResponseEntity<Map<String,Object>> addReferredCandidate(@RequestBody ReferredCandidateRequestDTO referredCandidateRequestDTO) {
-        return referredCandidateService.addReferredCandidate(referredCandidateRequestDTO);
+    public ResponseEntity<Map<String,Object>> addReferredCandidate(@RequestBody ReferredCandidate referredCandidate) {
+        return referredCandidateService.addReferredCandidate(referredCandidate);
 
     }
 

@@ -12,7 +12,7 @@ import java.util.Map;
 @Service
 public interface ReferredCandidateService {
 
-    ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidateRequestDTO referredCandidateRequestDTO);
+    ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate);
     ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String token);
 
     ResponseEntity<Map<String, Object>> getAllCandidates();
