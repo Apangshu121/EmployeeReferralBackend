@@ -49,7 +49,7 @@ public class ReferredCandidate{
     private boolean offerInHand; // Y
 
     @Lob
-    @Column(name = "resume", columnDefinition = "BLOB")
+    @Column(name = "resume", columnDefinition = "LONGBLOB")
     private byte[] resume;
 
     private String fileName;
