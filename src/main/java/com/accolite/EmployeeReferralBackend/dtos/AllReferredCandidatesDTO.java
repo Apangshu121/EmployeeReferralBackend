@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class AllReferredCandidatesDTO {
 
     private Long id;
+    private String candidateName;
     private LocalDate dateOfReferral;
     private String interviewedPosition;
     private String currentStatus;

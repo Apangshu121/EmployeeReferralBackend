@@ -204,6 +204,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     {
         AllReferredCandidatesDTO allReferredCandidatesDTO = new AllReferredCandidatesDTO();
 
+        allReferredCandidatesDTO.setCandidateName(referredCandidate.getCandidateName());
         allReferredCandidatesDTO.setId(referredCandidate.getId());
         allReferredCandidatesDTO.setDateOfReferral(referredCandidate.getDateOfReferral());
         allReferredCandidatesDTO.setInterviewedPosition(referredCandidate.getInterviewedPosition());
