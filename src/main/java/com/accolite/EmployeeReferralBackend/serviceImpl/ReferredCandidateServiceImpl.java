@@ -1,5 +1,6 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
+import com.accolite.EmployeeReferralBackend.dtos.AllReferredCandidatesDTO;
 import com.accolite.EmployeeReferralBackend.dtos.ReferredCandidateDTO;
 import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.models.*;
@@ -25,6 +26,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import java.io.ByteArrayInputStream;
@@ -86,6 +88,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     byte[] pdfBytes = fileStorageService.getFromMemory(referredCandidate.getFileName());
 
                     candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
+                    candidate.setDateOfReferral(LocalDate.now());
                     candidate.setCandidateName(referredCandidate.getCandidateName());
                     candidate.setExperience(referredCandidate.getExperience());
                     candidate.setContactNumber(referredCandidate.getContactNumber());
@@ -194,17 +197,34 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 .build();
     }
 
+    private AllReferredCandidatesDTO mapToAllReferredCandidatesDTO(ReferredCandidate referredCandidate)
+    {
+        AllReferredCandidatesDTO allReferredCandidatesDTO = new AllReferredCandidatesDTO();
+
+        allReferredCandidatesDTO.setId(referredCandidate.getId());
+        allReferredCandidatesDTO.setDateOfReferral(referredCandidate.getDateOfReferral());
+        allReferredCandidatesDTO.setInterviewedPosition(referredCandidate.getInterviewedPosition());
+
+        if(referredCandidate.getInterviewStatus()!=null)
+        {
+            allReferredCandidatesDTO.setInterviewStatus(referredCandidate.getInterviewStatus().getInterviewStatus());
+            allReferredCandidatesDTO.setCurrentStatus(referredCandidate.getInterviewStatus().getCurrentStatus());
+        }
+
+        return allReferredCandidatesDTO;
+    }
+
     @Override
     public ResponseEntity<Map<String, Object>> getAllCandidates() {
 
         try{
             Map<String,Object> responseJson = new HashMap<>();
             List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAll();
-            List<ReferredCandidateDTO> referredCandidateDTOS = allReferredCandidates.stream()
-                    .map(this::mapToReferredCandidateDTO)
+            List<AllReferredCandidatesDTO> allReferredCandidatesDTOS = allReferredCandidates.stream()
+                    .map(this::mapToAllReferredCandidatesDTO)
                     .toList();
 
-            responseJson.put("candidates",referredCandidateDTOS);
+            responseJson.put("candidates",allReferredCandidatesDTOS);
 
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){
@@ -331,8 +351,10 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             ReferredCandidate referredCandidate1 = referredCandidateRepository.save(referredCandidate);
 
+            ReferredCandidateDTO referredCandidateDTO = mapToReferredCandidateDTO(referredCandidate1);
+
             Map<String, Object> responseJson = new HashMap<>();
-            responseJson.put("UpdatedReferredCandidate",referredCandidate1);
+            responseJson.put("UpdatedReferredCandidate",referredCandidateDTO);
 
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){

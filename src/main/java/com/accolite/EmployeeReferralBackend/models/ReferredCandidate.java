@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -62,6 +63,7 @@ public class ReferredCandidate{
     private boolean isActive; // Y
 
     private LocalDateTime updatedAt;
+    private LocalDate dateOfReferral;
 
     // Editable by Recruiter:- interviewedPosition, businessUnit, band
 }
