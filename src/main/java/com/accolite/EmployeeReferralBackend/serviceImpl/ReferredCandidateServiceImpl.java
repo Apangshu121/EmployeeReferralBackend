@@ -67,25 +67,28 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             List<ReferredCandidate> existingCandidates = referredCandidateRepository.findByContactNumberAndCandidateEmail(referredCandidate.getContactNumber(), referredCandidate.getCandidateEmail());
             LocalDateTime currentDateTime = LocalDateTime.now();
-            LocalDateTime updatedAt = existingCandidates.stream().filter(ReferredCandidate::isActive).findFirst().map(ReferredCandidate::getUpdatedAt).orElse(null);
+            Optional<ReferredCandidate> latestEntry = existingCandidates.stream().filter(ReferredCandidate::isActive).findFirst();
 
-            if (!existingCandidates.isEmpty() && currentDateTime.isBefore(updatedAt.plus(6, ChronoUnit.MONTHS))) {
+            LocalDateTime updatedAt = latestEntry.map(ReferredCandidate::getUpdatedAt).orElse(null);
+
+            if (!existingCandidates.isEmpty() && currentDateTime.isBefore(updatedAt.plus(30, ChronoUnit.SECONDS))) {
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
                 errorMap.put("message", "The candidate has been referred within the last 6 months");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-            }else if(!existingCandidates.isEmpty() && currentDateTime.isAfter(updatedAt.plus(6, ChronoUnit.MONTHS)) && existingCandidates.size()==3){
+            }else if(!existingCandidates.isEmpty() && currentDateTime.isAfter(updatedAt.plus(30, ChronoUnit.SECONDS)) && existingCandidates.size()==3){
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
                 errorMap.put("message", "The candidate has already been referred 3 times");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
             }else{
+                    byte[] pdfBytes = fileStorageService.getFromMemory(referredCandidate.getFileName());
+
                     if(!existingCandidates.isEmpty()) {
                         existingCandidates.forEach(ReferredCandidate -> ReferredCandidate.setActive(false));
                     }
 
                     ReferredCandidate candidate = new ReferredCandidate();
-                    byte[] pdfBytes = fileStorageService.getFromMemory(referredCandidate.getFileName());
 
                     candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
                     candidate.setDateOfReferral(LocalDate.now());
