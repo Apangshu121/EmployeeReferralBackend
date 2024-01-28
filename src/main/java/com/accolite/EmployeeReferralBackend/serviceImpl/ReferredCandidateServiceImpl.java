@@ -159,8 +159,8 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByReferrerEmail(email);
 
-            List<ReferredCandidateDTO> referredCandidateDTOS = referredCandidates.stream()
-                    .map(this::mapToReferredCandidateDTO)
+            List<AllReferredCandidatesDTO> referredCandidateDTOS = referredCandidates.stream()
+                    .map(this::mapToAllReferredCandidatesDTO)
                     .toList();
             Map<String,Object> referredCandidatesJson = new HashMap<>();
 
@@ -223,8 +223,8 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         try{
             Map<String,Object> responseJson = new HashMap<>();
             List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAll();
-            List<AllReferredCandidatesDTO> allReferredCandidatesDTOS = allReferredCandidates.stream()
-                    .map(this::mapToAllReferredCandidatesDTO)
+            List<ReferredCandidateDTO> allReferredCandidatesDTOS = allReferredCandidates.stream()
+                    .map(this::mapToReferredCandidateDTO)
                     .toList();
 
             responseJson.put("candidates",allReferredCandidatesDTOS);
