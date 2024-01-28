@@ -169,26 +169,27 @@ try {
         existingCandidate.setCandidateEmail(updatedCandidateDTO.getCandidateEmail());
     }
 
-
+    if(existingCandidate.isWillingToRelocate()!=updatedCandidateDTO.isWillingToRelocate()) {
         existingCandidate.setWillingToRelocate(updatedCandidateDTO.isWillingToRelocate());
+    }
 
 
     if (updatedCandidateDTO.getPreferredLocation() != null) {
         existingCandidate.setPreferredLocation(updatedCandidateDTO.getPreferredLocation());
     }
 
-
+    if(existingCandidate.isServingNoticePeriod() != updatedCandidateDTO.isServingNoticePeriod()) {
         existingCandidate.setServingNoticePeriod(updatedCandidateDTO.isServingNoticePeriod());
+    }
 
 
     if (updatedCandidateDTO.getNoticePeriodLeft() != 0) {
         existingCandidate.setNoticePeriodLeft(updatedCandidateDTO.getNoticePeriodLeft());
     }
 
-
+    if(existingCandidate.isOfferInHand()!=updatedCandidateDTO.isOfferInHand()) {
         existingCandidate.setOfferInHand(updatedCandidateDTO.isOfferInHand());
-
-
+    }
 
 
     // Save the updated candidate
