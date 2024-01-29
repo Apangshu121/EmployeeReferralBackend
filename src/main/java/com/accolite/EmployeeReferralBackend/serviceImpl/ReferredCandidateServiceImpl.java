@@ -549,7 +549,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             Map<String, Object> responseJson = new HashMap<>();
 
-            responseJson.put("Searched Candidates", referredCandidateDTOS);
+            responseJson.put("SearchedCandidates", referredCandidateDTOS);
 
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){
@@ -571,7 +571,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             Map<String, Object> responseJson = new HashMap<>();
 
-            responseJson.put("Filtered Candidates", filteredCandidates);
+            responseJson.put("FilteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){
             Map<String, Object> errorMap = new HashMap<>();
@@ -592,7 +592,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             Map<String, Object> responseJson = new HashMap<>();
 
-            responseJson.put("Filtered Candidates", filteredCandidates);
+            responseJson.put("FilteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){
             Map<String, Object> errorMap = new HashMap<>();
@@ -613,7 +613,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             Map<String, Object> responseJson = new HashMap<>();
 
-            responseJson.put("Filtered Candidates", filteredCandidates);
+            responseJson.put("FilteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){
             Map<String, Object> errorMap = new HashMap<>();
