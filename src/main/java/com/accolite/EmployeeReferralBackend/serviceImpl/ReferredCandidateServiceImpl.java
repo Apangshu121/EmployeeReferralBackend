@@ -243,6 +243,13 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     public ResponseEntity<Map<String, Object>> interviewTheCandidate(int id) {
         try{
             ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
+            if(referredCandidate.getInterviewStatus()!=null)
+            {
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "Candidate already selected for interview");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
+            }
             referredCandidate.setInterviewTheCandidate(true);
             InterviewStatus interviewStatus = new InterviewStatus();
             interviewStatus.setCurrentStatus("POOL");

@@ -61,9 +61,11 @@ public class AdminServiceImpl implements AdminService {
         try {
            User existingUser = userRepository.findByEmail(email).orElseThrow();
 
-                if(existingUser.getRole()!=null)
+                if(modifiedUser.getRole()!=null)
                     existingUser.setRole(modifiedUser.getRole());
 
+                if(modifiedUser.getBusinessUnit()!=null)
+                    existingUser.setBusinessUnit(modifiedUser.getBusinessUnit());
                 // Update other properties as needed
 
                 User savedUser = userRepository.save(existingUser);
@@ -231,7 +233,8 @@ try {
                 user.getId(),
                 user.getEmail(),
                 user.getName(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.getBusinessUnit()
         );
     }
 //

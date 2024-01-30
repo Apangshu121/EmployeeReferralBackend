@@ -3,9 +3,11 @@ package com.accolite.EmployeeReferralBackend.service;
 import com.accolite.EmployeeReferralBackend.dtos.AdminUpdateDTO;
 import com.accolite.EmployeeReferralBackend.models.User;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+@Service
 public interface AdminService {
 
    ResponseEntity<Map<String, Object>> getAllUsers();
