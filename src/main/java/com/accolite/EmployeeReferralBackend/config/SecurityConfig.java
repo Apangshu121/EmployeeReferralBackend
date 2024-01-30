@@ -38,14 +38,16 @@ public class SecurityConfig {
             "/api/referredCandidates/filterByNoticePeriod/**",
             "/api/referredCandidates/sendMail/**",
             "/api/selectReferredCandidateForInterview/**",
-            "/api/referredCandidates/getAll",
             "/user/getAllReferralsTally",
             "/api/referredCandidates/by-interview-status/**"
 
     };
 
+    private static final String[] ADMIN_RECRUITER_LIST_URL = {"/api/referredCandidates/getAll"};
+
     private static final String[] ADMIN_LIST_URL = {"/admin/users/modify/**","/admin/users/all","/admin/users/delete/**"};
 
+    private static final String[] SENIOR_LIST_URL = {"/senior/getCandidatesOfBusinessUnit"};
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,8 +56,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req->req.requestMatchers(WHITE_LIST_URL)
                         .permitAll()
                         .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","SENIOR","ADMIN")
+                        .requestMatchers(ADMIN_RECRUITER_LIST_URL).hasAnyAuthority("RECRUITER","ADMIN")
                         .requestMatchers(RECRUITER_LIST_URL).hasAuthority("RECRUITER")
                         .requestMatchers(ADMIN_LIST_URL).hasAuthority("ADMIN")
+                        .requestMatchers(SENIOR_LIST_URL).hasAuthority("SENIOR")
                         .anyRequest()
                         .authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
