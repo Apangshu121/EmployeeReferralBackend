@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class ReferralTallyDTO {
 
     private String name;
+    private String businessUnit;
     private int totalReferrals;
     private int select;
     private int reject;
