@@ -16,6 +16,9 @@ public interface ReferredCandidateRepository extends JpaRepository<ReferredCandi
 
     List<ReferredCandidate> findByExperienceGreaterThanEqual(int experience);
 
+    long countByReferrerEmailAndInterviewStatus_InterviewStatus(String referrerEmail, String interviewStatus);
+
+
     List<ReferredCandidate> findByPreferredLocation(String preferredLocation);
 
     @Query("SELECT r FROM ReferredCandidate r WHERE r.noticePeriodLeft <= :noticePeriodLeft")
