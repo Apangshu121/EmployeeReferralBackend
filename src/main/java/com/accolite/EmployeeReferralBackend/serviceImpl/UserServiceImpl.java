@@ -41,6 +41,7 @@ public class UserServiceImpl implements UserService {
             Map<String,Object> responseMap = new HashMap<>();
             responseMap.put("name",user.getName());
             responseMap.put("role", user.getRole());
+            responseMap.put("businessUnit", user.getBusinessUnit());
 
             return ResponseEntity.ok(responseMap);
         }catch (Exception e){
@@ -65,6 +66,7 @@ public class UserServiceImpl implements UserService {
             ReferralTallyDTO referralTallyDTO = updateTally(referredCandidates);
 
             referralTallyDTO.setName(user.getName());
+            referralTallyDTO.setBusinessUnit(user.getBusinessUnit());
 
             Map<String,Object> responseMap = new HashMap<>();
 
@@ -115,6 +117,7 @@ public class UserServiceImpl implements UserService {
                     ReferralTallyDTO tally = updateTally(entry.getValue());
                     String email = entry.getKey();
                     tally.setName(findReferrerName(email, users));
+                    tally.setBusinessUnit(findReferrerBusinessUnit(email,users));
                     return tally;
                 })
                 .collect(Collectors.toList());
@@ -124,6 +127,14 @@ public class UserServiceImpl implements UserService {
         return users.stream()
                 .filter(user -> referrerEmail.equals(user.getEmail()))
                 .map(User::getName)
+                .findFirst()
+                .orElse("Unknown"); // Default to "Unknown" if the name is not found
+    }
+
+    private String findReferrerBusinessUnit(String referrerEmail, List<User> users) {
+        return users.stream()
+                .filter(user -> referrerEmail.equals(user.getEmail()))
+                .map(User::getBusinessUnit)
                 .findFirst()
                 .orElse("Unknown"); // Default to "Unknown" if the name is not found
     }

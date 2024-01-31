@@ -104,6 +104,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     candidate.setNoticePeriodLeft(referredCandidate.getNoticePeriodLeft());
                     candidate.setServingNoticePeriod(referredCandidate.isServingNoticePeriod());
                     candidate.setOfferInHand(referredCandidate.isOfferInHand());
+                    candidate.setBusinessUnit(referredCandidate.getBusinessUnit());
                     candidate.setActive(true);
                     candidate.setReferrerEmail(email);
                     candidate.setResume(pdfBytes);
@@ -222,8 +223,13 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     public ResponseEntity<Map<String, Object>> getAllCandidates() {
 
         try{
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
+
+            User user = userRepository.findByEmail(email).orElseThrow();
+
             Map<String,Object> responseJson = new HashMap<>();
-            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findAll();
+            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findByBusinessUnit(user.getBusinessUnit());
             List<ReferredCandidateDTO> allReferredCandidatesDTOS = allReferredCandidates.stream()
                     .map(this::mapToReferredCandidateDTO)
                     .toList();
@@ -273,6 +279,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     @Override
     public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(String status) {
         try {
+
             List<ReferredCandidateDTO> referredCandidateDTOS = getReferredCandidatesByInterviewStatusUtil(status);
             Map<String, Object> responseMap = new HashMap<>();
             responseMap.put("filteredCandidates", referredCandidateDTOS);
@@ -286,9 +293,26 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     private List<ReferredCandidateDTO> getReferredCandidatesByInterviewStatusUtil(String status) {
-        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatus(status);
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
 
-        return filteredCandidates.stream()
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates;
+
+        if ("POOL".equals(status)) {
+            // Include candidates with null interviewStatus when currentStatus is 'POOL'
+            filteredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatusOrInterviewStatusIsNull(status);
+        } else {
+            // Exclude candidates with null interviewStatus for other status values
+            filteredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatus(status);
+        }
+
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+
+        return filteredCandidatesByBU.stream()
                 .map(this::mapToReferredCandidateDTO)
                 .toList();
     }
@@ -350,9 +374,6 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 referredCandidate.setInterviewedPosition(updatedReferredCandidate.getInterviewedPosition());
             }
 
-            if(updatedReferredCandidate.getBusinessUnit()!=null) {
-                referredCandidate.setBusinessUnit(updatedReferredCandidate.getBusinessUnit());
-            }
 
             if(updatedReferredCandidate.getBand()!=null) {
                 referredCandidate.setBand(updatedReferredCandidate.getBand().toUpperCase());
@@ -379,9 +400,16 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     private List<ReferredCandidateDTO> filterCandidatesByExperienceUtil(int experience)
     {
-        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
 
-        return filteredCandidates.stream()
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+        return filteredCandidatesByBU.stream()
                 .map(this::mapToReferredCandidateDTO)
                 .toList();
     }
@@ -406,9 +434,16 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     private List<ReferredCandidateDTO> filterCandidatesByPreferredLocationUtil(String preferredLocation)
     {
-        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
 
-        return filteredCandidates.stream()
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+        return filteredCandidatesByBU.stream()
                 .map(this::mapToReferredCandidateDTO)
                 .toList();
     }
@@ -448,9 +483,16 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     private List<ReferredCandidateDTO> filterCandidatesByNoticePeriodLessThanOrEqualUtil(int noticePeriodLeft) {
-        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLeftLessThanOrEqual(noticePeriodLeft);
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
 
-        return filteredCandidates.stream()
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLeftLessThanOrEqual(noticePeriodLeft);
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+        return filteredCandidatesByBU.stream()
                 .map(this::mapToReferredCandidateDTO)
                 .toList();
 
@@ -539,6 +581,12 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     @Override
     public ResponseEntity<Map<String, Object>> searchCandidates(String keyword) {
         try{
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
+
+            User user = userRepository.findByEmail(email).orElseThrow();
+            String businessUnit = user.getBusinessUnit();
+
             Specification<ReferredCandidate> specification = (root, query, criteriaBuilder) -> {
                 List<Predicate> predicates = new ArrayList<>();
 
@@ -550,7 +598,8 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             };
 
             List<ReferredCandidate> searchedCandidatesList = referredCandidateRepository.findAll(specification);
-            List<ReferredCandidateDTO> referredCandidateDTOS = searchedCandidatesList.stream()
+            List<ReferredCandidate> searchCandidatesListByBU = searchedCandidatesList.stream().filter(candidate-> Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+            List<ReferredCandidateDTO> referredCandidateDTOS = searchCandidatesListByBU.stream()
                     .map(this::mapToReferredCandidateDTO)
                     .toList();
 
