@@ -24,7 +24,7 @@ public class SecurityConfig {
 
     private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo","/api/referredCandidates/download/{id}","/swagger-ui/**", "/api-docs/**"};
 
-    private static final String[] AUTHENTICATED_LIST_URL = {"/api/referredCandidates/getAllCandidatesOfUser", "/user/getUserDetails", "/api/referredCandidates/add","/user/getReferralTally"};
+    private static final String[] AUTHENTICATED_LIST_URL = {"/api/referredCandidates/getAllCandidatesOfUser", "/user/getUserDetails", "/api/referredCandidates/add","/user/getReferralTally", "/api/referredCandidates/statusTally"};
 
     private static final String[] RECRUITER_LIST_URL = {"/api/referredCandidates/getAll",
             "/api/referredCandidates/get/**",

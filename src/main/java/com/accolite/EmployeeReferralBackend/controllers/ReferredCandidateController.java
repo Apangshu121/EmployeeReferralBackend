@@ -1,5 +1,6 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
+import com.accolite.EmployeeReferralBackend.dtos.StatusTalyDTO;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
 import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
@@ -7,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -109,4 +112,18 @@ public class ReferredCandidateController {
     public ResponseEntity<InputStreamResource> downloadResume(@PathVariable int id) {
         return referredCandidateService.downloadResume(id);
     }
+
+    @GetMapping("/statusTally")
+    public ResponseEntity<StatusTalyDTO> getStatusTally() {
+        try {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails) principal).getUsername();
+            StatusTalyDTO statusTallyDTO = referredCandidateService.getStatusTallyForUser(email);
+            return ResponseEntity.ok(statusTallyDTO);
+        } catch (Exception e) {
+            // Handle exceptions as needed
+            return ResponseEntity.status(500).build();
+        }
+    }
+
 }

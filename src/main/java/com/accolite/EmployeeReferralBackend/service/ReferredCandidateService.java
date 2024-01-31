@@ -1,5 +1,6 @@
 package com.accolite.EmployeeReferralBackend.service;
 
+import com.accolite.EmployeeReferralBackend.dtos.StatusTalyDTO;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
 import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
 import org.springframework.core.io.InputStreamResource;
@@ -13,6 +14,9 @@ public interface ReferredCandidateService {
 
     ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate);
     ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String token);
+
+    public StatusTalyDTO getStatusTallyForUser(String userEmail);
+
 
     ResponseEntity<Map<String, Object>> getAllCandidates();
 

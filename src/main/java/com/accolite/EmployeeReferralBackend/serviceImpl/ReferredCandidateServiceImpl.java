@@ -2,6 +2,7 @@ package com.accolite.EmployeeReferralBackend.serviceImpl;
 
 import com.accolite.EmployeeReferralBackend.dtos.AllReferredCandidatesDTO;
 import com.accolite.EmployeeReferralBackend.dtos.ReferredCandidateDTO;
+import com.accolite.EmployeeReferralBackend.dtos.StatusTalyDTO;
 import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
 import com.accolite.EmployeeReferralBackend.models.*;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateHistoryRepository;
@@ -60,10 +61,10 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     public ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate) {
 
-        try{
+        try {
 
             Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String email = ((UserDetails)principal).getUsername();
+            String email = ((UserDetails) principal).getUsername();
 
             List<ReferredCandidate> existingCandidates = referredCandidateRepository.findByContactNumberAndCandidateEmail(referredCandidate.getContactNumber(), referredCandidate.getCandidateEmail());
             LocalDateTime currentDateTime = LocalDateTime.now();
@@ -76,19 +77,19 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 errorMap.put("status", "error");
                 errorMap.put("message", "The candidate has been referred within the last 6 months");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-            }else if(!existingCandidates.isEmpty() && currentDateTime.isAfter(updatedAt.plus(6, ChronoUnit.MONTHS)) && existingCandidates.size()==3){
+            } else if (!existingCandidates.isEmpty() && currentDateTime.isAfter(updatedAt.plus(6, ChronoUnit.MONTHS)) && existingCandidates.size() == 3) {
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
                 errorMap.put("message", "The candidate has already been referred 3 times");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
-            }else{
-                    byte[] pdfBytes = fileStorageService.getFromMemory(referredCandidate.getFileName());
+            } else {
+                byte[] pdfBytes = fileStorageService.getFromMemory(referredCandidate.getFileName());
 
-                    if(!existingCandidates.isEmpty()) {
-                        existingCandidates.forEach(ReferredCandidate -> ReferredCandidate.setActive(false));
-                    }
+                if (!existingCandidates.isEmpty()) {
+                    existingCandidates.forEach(ReferredCandidate -> ReferredCandidate.setActive(false));
+                }
 
-                    ReferredCandidate candidate = new ReferredCandidate();
+                ReferredCandidate candidate = new ReferredCandidate();
 
                     candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
                     candidate.setDateOfReferral(LocalDate.now());
@@ -112,17 +113,17 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     candidate.setUpdatedAt(LocalDateTime.now());
                     candidate.setBlacklisted(referredCandidate.isBlacklisted());
 
-                    referredCandidateRepository.save(candidate);
-                    // System.out.println(user);
-                    fileStorageService.removeFromMemory(referredCandidate.getFileName());
-                    Map<String,Object> responseMap = new HashMap<>();
-                    responseMap.put("message","Referred Candidate added Successfully");
+                referredCandidateRepository.save(candidate);
+                // System.out.println(user);
+                fileStorageService.removeFromMemory(referredCandidate.getFileName());
+                Map<String, Object> responseMap = new HashMap<>();
+                responseMap.put("message", "Referred Candidate added Successfully");
 
-                    return ResponseEntity.ok(responseMap);
+                return ResponseEntity.ok(responseMap);
             }
 
-        }catch (Exception e){
-             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -152,23 +153,23 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         }
     }
 
-    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(String token){
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesOfUser(String token) {
 
-        try{
+        try {
             Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String email = ((UserDetails)principal).getUsername();
+            String email = ((UserDetails) principal).getUsername();
 
             List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByReferrerEmail(email);
 
             List<AllReferredCandidatesDTO> referredCandidateDTOS = referredCandidates.stream()
                     .map(this::mapToAllReferredCandidatesDTO)
                     .toList();
-            Map<String,Object> referredCandidatesJson = new HashMap<>();
+            Map<String, Object> referredCandidatesJson = new HashMap<>();
 
-            referredCandidatesJson.put("referredCandidates",referredCandidateDTOS);
+            referredCandidatesJson.put("referredCandidates", referredCandidateDTOS);
             return ResponseEntity.ok(referredCandidatesJson);
 
-        }catch(Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -201,8 +202,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 .build();
     }
 
-    private AllReferredCandidatesDTO mapToAllReferredCandidatesDTO(ReferredCandidate referredCandidate)
-    {
+    private AllReferredCandidatesDTO mapToAllReferredCandidatesDTO(ReferredCandidate referredCandidate) {
         AllReferredCandidatesDTO allReferredCandidatesDTO = new AllReferredCandidatesDTO();
 
         allReferredCandidatesDTO.setCandidateName(referredCandidate.getCandidateName());
@@ -210,8 +210,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         allReferredCandidatesDTO.setDateOfReferral(referredCandidate.getDateOfReferral());
         allReferredCandidatesDTO.setInterviewedPosition(referredCandidate.getInterviewedPosition());
 
-        if(referredCandidate.getInterviewStatus()!=null)
-        {
+        if (referredCandidate.getInterviewStatus() != null) {
             allReferredCandidatesDTO.setInterviewStatus(referredCandidate.getInterviewStatus().getInterviewStatus());
             allReferredCandidatesDTO.setCurrentStatus(referredCandidate.getInterviewStatus().getCurrentStatus());
         }
@@ -234,10 +233,10 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     .map(this::mapToReferredCandidateDTO)
                     .toList();
 
-            responseJson.put("candidates",allReferredCandidatesDTOS);
+            responseJson.put("candidates", allReferredCandidatesDTOS);
 
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -247,10 +246,9 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     @Override
     public ResponseEntity<Map<String, Object>> interviewTheCandidate(int id) {
-        try{
+        try {
             ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
-            if(referredCandidate.getInterviewStatus()!=null)
-            {
+            if (referredCandidate.getInterviewStatus() != null) {
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
                 errorMap.put("message", "Candidate already selected for interview");
@@ -264,11 +262,11 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             referredCandidate.setUpdatedAt(LocalDateTime.now());
             interviewStatus.setNoOfRounds(4);
             referredCandidateRepository.save(referredCandidate);
-            Map<String,Object> responseMap = new HashMap<>();
-            responseMap.put("message","Candidate selected for interview");
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("message", "Candidate selected for interview");
 
             return ResponseEntity.ok(responseMap);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -284,7 +282,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             Map<String, Object> responseMap = new HashMap<>();
             responseMap.put("filteredCandidates", referredCandidateDTOS);
             return ResponseEntity.ok(responseMap);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -319,7 +317,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     @Override
     public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatusAndSearch(String status, String keyword) {
-        try{
+        try {
             List<ReferredCandidateDTO> referredCandidateDTOS = getReferredCandidatesByInterviewStatusUtil(status);
 
             List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
@@ -329,7 +327,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             Map<String, Object> responseMap = new HashMap<>();
             responseMap.put("filteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseMap);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -347,7 +345,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             InterviewStatus interviewStatus = referredCandidate.getInterviewStatus();
 
-            if (updatedReferredCandidate.getBand()!=null && updatedReferredCandidate.getBusinessUnit()!=null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getInterviewStatus() != null
+            if (updatedReferredCandidate.getBand() != null && updatedReferredCandidate.getBusinessUnit() != null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getInterviewStatus() != null
                     && !updatedReferredCandidate.getInterviewStatus().equalsIgnoreCase(referredCandidate.getInterviewStatus().getInterviewStatus())) {
                 ReferredCandidateHistory historyEntry = new ReferredCandidateHistory();
                 historyEntry.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
@@ -356,26 +354,26 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 referredCandidate.getReferredCandidateHistory().add(historyEntry);
             }
 
-            if (updatedReferredCandidate.getBand()!=null && updatedReferredCandidate.getBusinessUnit()!=null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getCurrentStatus() != null) {
+            if (updatedReferredCandidate.getBand() != null && updatedReferredCandidate.getBusinessUnit() != null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getCurrentStatus() != null) {
                 interviewStatus.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
                 interviewStatus.setCurrentStatusUpdated(true);
             }
 
-            if(updatedReferredCandidate.getNoOfRounds() != 0) {
+            if (updatedReferredCandidate.getNoOfRounds() != 0) {
                 interviewStatus.setNoOfRounds(updatedReferredCandidate.getNoOfRounds());
             }
 
-            if (updatedReferredCandidate.getBand()!=null && updatedReferredCandidate.getBusinessUnit()!=null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getInterviewStatus() != null) {
+            if (updatedReferredCandidate.getBand() != null && updatedReferredCandidate.getBusinessUnit() != null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getInterviewStatus() != null) {
                 interviewStatus.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
                 interviewStatus.setInterviewStatusUpdated(true);
             }
 
-            if (updatedReferredCandidate.getInterviewedPosition() != null){
+            if (updatedReferredCandidate.getInterviewedPosition() != null) {
                 referredCandidate.setInterviewedPosition(updatedReferredCandidate.getInterviewedPosition());
             }
 
 
-            if(updatedReferredCandidate.getBand()!=null) {
+            if (updatedReferredCandidate.getBand() != null) {
                 referredCandidate.setBand(updatedReferredCandidate.getBand().toUpperCase());
             }
 
@@ -386,10 +384,10 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             ReferredCandidateDTO referredCandidateDTO = mapToReferredCandidateDTO(referredCandidate1);
 
             Map<String, Object> responseJson = new HashMap<>();
-            responseJson.put("UpdatedReferredCandidate",referredCandidateDTO);
+            responseJson.put("UpdatedReferredCandidate", referredCandidateDTO);
 
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
@@ -415,7 +413,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     @Override
-    public ResponseEntity<Map<String,Object>> filterCandidatesByExperience(int experience) {
+    public ResponseEntity<Map<String, Object>> filterCandidatesByExperience(int experience) {
         try {
 
             List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByExperienceUtil(experience);
@@ -467,7 +465,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     @Override
-    public ResponseEntity<Map<String,Object>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriodLeft) {
+    public ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriodLeft) {
         try {
             List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByNoticePeriodLessThanOrEqualUtil(noticePeriodLeft);
             Map<String, Object> responseJson = new HashMap<>();
@@ -506,17 +504,17 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             InterviewStatus interviewStatus = referredCandidate.getInterviewStatus();
 
-            boolean flag1=false;
-            boolean flag2=false;
-           // System.out.println(referredCandidate.getCandidateName()+" "+referredCandidate.getCandidateEmail()+" "+referredCandidate.getUser().getEmail());
+            boolean flag1 = false;
+            boolean flag2 = false;
+            // System.out.println(referredCandidate.getCandidateName()+" "+referredCandidate.getCandidateEmail()+" "+referredCandidate.getUser().getEmail());
 
-            if(interviewStatus.isInterviewStatusUpdated()){
+            if (interviewStatus.isInterviewStatusUpdated()) {
                 interviewStatus.setInterviewStatusUpdated(false);
-                flag1=true;
+                flag1 = true;
                 SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
                 simpleMailMessage.setFrom(fromMail);
-                String subject= getSubjectOfCandidate(interviewStatus.getInterviewStatus(),referredCandidate.getCandidateName());
-                String template = getTemplateOfCandidate(interviewStatus.getInterviewStatus(),referredCandidate.getCandidateName());
+                String subject = getSubjectOfCandidate(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
+                String template = getTemplateOfCandidate(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
                 simpleMailMessage.setSubject(subject);
                 simpleMailMessage.setText(template);
                 simpleMailMessage.setTo(referredCandidate.getCandidateEmail());
@@ -524,21 +522,21 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
                 SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
                 simpleMailMessage1.setFrom(fromMail);
-                String subject1= getSubjectOfReferrer(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
-                String template1 = getTemplateOfReferrer(interviewStatus.getInterviewStatus(),referredCandidate.getCandidateName());
+                String subject1 = getSubjectOfReferrer(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
+                String template1 = getTemplateOfReferrer(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
                 simpleMailMessage1.setSubject(subject1);
                 simpleMailMessage1.setText(template1);
                 simpleMailMessage1.setTo(referredCandidate.getReferrerEmail());
                 mailSender.send(simpleMailMessage1);
             }
 
-            if(interviewStatus.isCurrentStatusUpdated()){
+            if (interviewStatus.isCurrentStatusUpdated()) {
                 interviewStatus.setCurrentStatusUpdated(false);
-                flag2=true;
+                flag2 = true;
                 SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
                 simpleMailMessage.setFrom(fromMail);
-                String subject= getSubjectOfCandidateForCurrentStatus(referredCandidate.getCandidateName());
-                String template = getTemplateOfCandidateForCurrentStatus(interviewStatus.getCurrentStatus(),referredCandidate.getCandidateName());
+                String subject = getSubjectOfCandidateForCurrentStatus(referredCandidate.getCandidateName());
+                String template = getTemplateOfCandidateForCurrentStatus(interviewStatus.getCurrentStatus(), referredCandidate.getCandidateName());
                 simpleMailMessage.setSubject(subject);
                 simpleMailMessage.setText(template);
                 simpleMailMessage.setTo(referredCandidate.getCandidateEmail());
@@ -546,15 +544,15 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
                 SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
                 simpleMailMessage1.setFrom(fromMail);
-                String subject1= getSubjectOfReferrerForCandidateStatus(referredCandidate.getCandidateName());
-                String template1 = getTemplateOfReferrerForCandidateStatus(interviewStatus.getCurrentStatus(),referredCandidate.getCandidateName());
+                String subject1 = getSubjectOfReferrerForCandidateStatus(referredCandidate.getCandidateName());
+                String template1 = getTemplateOfReferrerForCandidateStatus(interviewStatus.getCurrentStatus(), referredCandidate.getCandidateName());
                 simpleMailMessage1.setSubject(subject1);
                 simpleMailMessage1.setText(template1);
                 simpleMailMessage1.setTo(referredCandidate.getReferrerEmail());
                 mailSender.send(simpleMailMessage1);
             }
 
-            if(!flag1 && !flag2){
+            if (!flag1 && !flag2) {
                 Map<String, Object> errorMap = new HashMap<>();
                 errorMap.put("status", "error");
                 errorMap.put("message", "Mail already sent to both the referrer and candidate about the status of their recruitment process");
@@ -569,7 +567,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             return ResponseEntity.ok(responseJson);
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
@@ -608,7 +606,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             responseJson.put("SearchedCandidates", referredCandidateDTOS);
 
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -629,14 +627,15 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             responseJson.put("FilteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
     }
-//
+
+    //
     @Override
     public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocationAndSearch(String preferredLocation, String keyword) {
         try {
@@ -650,7 +649,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             responseJson.put("FilteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -671,7 +670,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
             responseJson.put("FilteredCandidates", filteredCandidates);
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -755,30 +754,30 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
             int numericRound = convertRoundToNumeric(round);
 
             if ("SELECT".equals(action)) {
-                if(forCandidate)
+                if (forCandidate)
                     return "Congratulations on passing round " + Integer.toString(numericRound) + " of the interview";
                 else
                     return "Great news! The candidate you referred, " + candidateName +
                             " has successfully passed Round " + Integer.toString(numericRound) + " of the interview";
             } else if ("REJECT".equals(action)) {
-                if(forCandidate)
+                if (forCandidate)
                     return "Sorry, you have been rejected in round " + Integer.toString(numericRound) + " of the interview";
                 else
                     return "We regret to inform you that the candidate you referred, " +
-                            candidateName + ", did not pass the round "+ Integer.toString(numericRound) + " of the interview and won't be moving forward.";
+                            candidateName + ", did not pass the round " + Integer.toString(numericRound) + " of the interview and won't be moving forward.";
 
             } else {
                 return "Unknown action";
             }
         } else if ("CODELYSER".equals(round)) {
             if ("SELECT".equals(action)) {
-                if(forCandidate)
+                if (forCandidate)
                     return "Congratulations on passing the Codelyser assesment test";
                 else
                     return "We are pleased to inform you that the candidate you referred, " +
                             candidateName + ", has passed the Codelyser assessment test";
             } else if ("REJECT".equals(action)) {
-                if(forCandidate)
+                if (forCandidate)
                     return "Sorry, you have been rejected in the Codelyser assessment test";
                 else
                     return "We regret to inform you that the candidate you referred, " +
@@ -809,7 +808,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     private String getTemplateOfCandidate(String interviewStatus, String candidateName) {
 
         interviewStatus = interviewStatus.toUpperCase();
-        String greeting = "Hello "+candidateName+",\n\n";
+        String greeting = "Hello " + candidateName + ",\n\n";
 
         String round = extractRound(interviewStatus);
         String action = extractAction(interviewStatus);
@@ -827,12 +826,12 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     private String generateSubject(String action, String candidateName, boolean forCandidate) {
         if ("SELECT".equals(action)) {
-            if(forCandidate)
+            if (forCandidate)
                 return "Congratulations! You have been selected for the next round";
             else
                 return "Candidate Status Update for " + candidateName;
         } else if ("REJECT".equals(action)) {
-            if(forCandidate)
+            if (forCandidate)
                 return "We appreciate your effort, but we won't be moving forward";
             else
                 return "Candidate Status Update for " + candidateName;
@@ -840,5 +839,19 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         } else {
             return "Unknown action";
         }
+    }
+
+
+    @Override
+    public StatusTalyDTO getStatusTallyForUser(String userEmail) {
+        long count1 = referredCandidateRepository.countByReferrerEmailAndInterviewStatus_InterviewStatus(userEmail, "R1 Select");
+        long count2 = referredCandidateRepository.countByReferrerEmailAndInterviewStatus_InterviewStatus(userEmail, "R2 Select");
+        long count3 = referredCandidateRepository.countByReferrerEmailAndInterviewStatus_InterviewStatus(userEmail, "R3 Select");
+
+        return StatusTalyDTO.builder()
+                .R1(count1)
+                .R2(count2)
+                .R3(count3)
+                .build();
     }
 }
