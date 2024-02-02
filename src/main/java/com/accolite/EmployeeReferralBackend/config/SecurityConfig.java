@@ -1,6 +1,5 @@
 package com.accolite.EmployeeReferralBackend.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,30 +22,45 @@ public class SecurityConfig {
     @Autowired
     AuthenticationProvider authenticationProvider;
 
-    private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo"};
-    private static final String[] AUTHENTICATED_LIST_URL = {"/getUserDetails", "/api/referredCandidates/add","/api/referredCandidates/getAllCandidatesOfUser"};
+    private static final String[] WHITE_LIST_URL = {"/saveUser", "/api/extractInfo","/api/referredCandidates/download/{id}","/swagger-ui/**", "/api-docs/**"};
+
+    private static final String[] AUTHENTICATED_LIST_URL = {"/api/referredCandidates/getAllCandidatesOfUser", "/user/getUserDetails", "/api/referredCandidates/add","/user/getReferralTally", "/api/referredCandidates/statusTally"};
+
     private static final String[] RECRUITER_LIST_URL = {"/api/referredCandidates/getAll",
             "/api/referredCandidates/get/**",
+            "/api/selectedReferredCandidates/allocateBonus/**",
             "/api/referredCandidates/update/**",
             "/api/selectedReferredCandidates/getAll",
             "/api/selectedReferredCandidates/get/**",
-            "/api/selectedReferredCandidates/update/**"
+            "/api/selectedReferredCandidates/update/**",
+            "/api/referredCandidates/filterByExperience/**",
+            "/api/referredCandidates/filterByPreferredLocation/**",
+            "/api/referredCandidates/filterByNoticePeriod/**",
+            "/api/referredCandidates/sendMail/**",
+            "/api/selectReferredCandidateForInterview/**",
+            "/user/getAllReferralsTally",
+            "/api/referredCandidates/by-interview-status/**"
+
     };
 
-    private static final String[] ADMIN_LIST_URL = {};
+    private static final String[] ADMIN_RECRUITER_LIST_URL = {"/api/referredCandidates/getAll"};
 
-    private static final String[] BU_HEAD_LIST_URL = {};
+    private static final String[] ADMIN_LIST_URL = {"/admin/users/modify/**","/admin/users/all","/admin/users/delete/**"};
+
+    private static final String[] SENIOR_LIST_URL = {"/senior/getCandidatesOfBusinessUnit"};
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        http.cors(cors -> cors.disable()).csrf(csrf -> csrf.disable())
+        http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(req->req.requestMatchers(WHITE_LIST_URL)
                         .permitAll()
-                        .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","BU_HEAD","ADMIN")
+                        .requestMatchers(AUTHENTICATED_LIST_URL).hasAnyAuthority("EMPLOYEE","RECRUITER","SENIOR","ADMIN")
+                        .requestMatchers(ADMIN_RECRUITER_LIST_URL).hasAnyAuthority("RECRUITER","ADMIN")
                         .requestMatchers(RECRUITER_LIST_URL).hasAuthority("RECRUITER")
                         .requestMatchers(ADMIN_LIST_URL).hasAuthority("ADMIN")
-                        .requestMatchers(BU_HEAD_LIST_URL).hasAuthority("BU_HEAD").anyRequest()
+                        .requestMatchers(SENIOR_LIST_URL).hasAuthority("SENIOR")
+                        .anyRequest()
                         .authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

@@ -1,14 +1,12 @@
 package com.accolite.EmployeeReferralBackend.models;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class ResumeData {
 
     private String name;
@@ -16,5 +14,6 @@ public class ResumeData {
     private String phone;
     private String experience;
     private String primarySkill;
-
+    private String filename;
+    private boolean isBlacklisted;
 }

@@ -1,8 +1,9 @@
 package com.accolite.EmployeeReferralBackend.repository;
 
-import com.accolite.EmployeeReferralBackend.models.CandidateDetails;
 import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
+import com.accolite.EmployeeReferralBackend.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,14 +12,35 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ReferredCandidateRepository extends JpaRepository<ReferredCandidate, Integer> {
-    Optional<ReferredCandidate> findByPanNumber(String panNumber);
+public interface ReferredCandidateRepository extends JpaRepository<ReferredCandidate, Integer>, JpaSpecificationExecutor<ReferredCandidate> {
 
-    @Query("SELECT new com.accolite.EmployeeReferralBackend.models.CandidateDetails(r.candidateName, r.dateOfReferral, r.interviewStatus, r.interviewedPosition) FROM ReferredCandidate r")
-    List<CandidateDetails> findAllCandidates();
+    List<ReferredCandidate> findByExperienceGreaterThanEqual(int experience);
 
-    @Query("SELECT new com.accolite.EmployeeReferralBackend.models.CandidateDetails(r.candidateName, r.dateOfReferral, r.interviewStatus, r.interviewedPosition) FROM ReferredCandidate r WHERE r.referrerEmail = :emailId")
-    List<CandidateDetails> findAllCandidatesOfReferrer(@Param("emailId") String emailId);
+    long countByReferrerEmailAndInterviewStatus_InterviewStatus(String referrerEmail, String interviewStatus);
+
+
+    List<ReferredCandidate> findByPreferredLocation(String preferredLocation);
+
+    @Query("SELECT r FROM ReferredCandidate r WHERE r.noticePeriodLeft <= :noticePeriodLeft")
+    List<ReferredCandidate> findByNoticePeriodLeftLessThanOrEqual(int noticePeriodLeft);
+
+     List<ReferredCandidate> findByReferrerEmail(String referrerEmail);
+
+    @Query("SELECT c FROM ReferredCandidate c WHERE c.contactNumber = :contactNumber AND c.candidateEmail = :candidateEmail")
+    List<ReferredCandidate> findByContactNumberAndCandidateEmail(@Param("contactNumber") long contactNumber, @Param("candidateEmail") String candidateEmail);
+
+    @Query("SELECT rc FROM ReferredCandidate rc INNER JOIN rc.interviewStatus is WHERE is.currentStatus = :status")
+    List<ReferredCandidate> findByInterviewStatusCurrentStatus(@Param("status") String status);
+
+    @Query("SELECT rc FROM ReferredCandidate rc LEFT JOIN rc.interviewStatus is " +
+            "WHERE is.currentStatus = :status OR is.currentStatus IS NULL")
+    List<ReferredCandidate> findByInterviewStatusCurrentStatusOrInterviewStatusIsNull(@Param("status") String status);
+
+
+    List<ReferredCandidate> findByBusinessUnitAndInterviewStatusCurrentStatusAndInterviewStatusIsNotNull(
+            String businessUnit, String currentStatus);
+
+    List<ReferredCandidate> findByBusinessUnit(String businessUnit);
 }
 
 

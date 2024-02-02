@@ -1,83 +1,129 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
-import com.accolite.EmployeeReferralBackend.models.CandidateDetails;
-import com.accolite.EmployeeReferralBackend.models.ReferredCandidate;
-import com.accolite.EmployeeReferralBackend.models.SelectedReferredCandidate;
+import com.accolite.EmployeeReferralBackend.dtos.AllReferredCandidatesDTO;
+import com.accolite.EmployeeReferralBackend.dtos.ReferredCandidateDTO;
+import com.accolite.EmployeeReferralBackend.dtos.StatusTalyDTO;
+import com.accolite.EmployeeReferralBackend.dtos.UpdateReferredCandidateRequestDTO;
+import com.accolite.EmployeeReferralBackend.models.*;
+import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateHistoryRepository;
 import com.accolite.EmployeeReferralBackend.repository.ReferredCandidateRepository;
-import com.accolite.EmployeeReferralBackend.repository.SelectedReferredCandidateRepository;
+import com.accolite.EmployeeReferralBackend.repository.UserRepository;
+import com.accolite.EmployeeReferralBackend.service.FileStorageService;
 import com.accolite.EmployeeReferralBackend.service.ReferredCandidateService;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.time.temporal.ChronoUnit;
 
 @Component
+@Transactional
 public class ReferredCandidateServiceImpl implements ReferredCandidateService {
 
     @Autowired
-    ReferredCandidateRepository referredCandidateRepository;
+    UserRepository userRepository;
 
     @Autowired
-    SelectedReferredCandidateRepository selectedReferredCandidateRepository;
+    ReferredCandidateRepository referredCandidateRepository;
+    @Autowired
+    private ReferredCandidateHistoryRepository referredCandidateHistoryRepository;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    @Value("${googleUrl}")
+    private String googleTokenInfoUrl;
+
+    @Value("${spring.mail.username}")
+    private String fromMail;
 
     public ResponseEntity<Map<String, Object>> addReferredCandidate(ReferredCandidate referredCandidate) {
 
-        try{
+        try {
+
             Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String email = ((UserDetails)principal).getUsername();
+            String email = ((UserDetails) principal).getUsername();
 
+            List<ReferredCandidate> existingCandidates = referredCandidateRepository.findByContactNumberAndCandidateEmail(referredCandidate.getContactNumber(), referredCandidate.getCandidateEmail());
+            LocalDateTime currentDateTime = LocalDateTime.now();
+            Optional<ReferredCandidate> latestEntry = existingCandidates.stream().filter(ReferredCandidate::isActive).findFirst();
 
-            if(!isValidPanCard(referredCandidate.getPanNumber(),referredCandidate.getCandidateName()))
-            {
-                throw new IllegalStateException("Not a valid Pan Card");
+            LocalDateTime updatedAt = latestEntry.map(ReferredCandidate::getUpdatedAt).orElse(null);
+
+            if (!existingCandidates.isEmpty() && currentDateTime.isBefore(updatedAt.plus(6, ChronoUnit.MONTHS))) {
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "The candidate has been referred within the last 6 months");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
+            } else if (!existingCandidates.isEmpty() && currentDateTime.isAfter(updatedAt.plus(6, ChronoUnit.MONTHS)) && existingCandidates.size() == 3) {
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "The candidate has already been referred 3 times");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
+            } else {
+                byte[] pdfBytes = fileStorageService.getFromMemory(referredCandidate.getFileName());
+
+                if (!existingCandidates.isEmpty()) {
+                    existingCandidates.forEach(ReferredCandidate -> ReferredCandidate.setActive(false));
+                }
+
+                ReferredCandidate candidate = new ReferredCandidate();
+
+                    candidate.setPrimarySkill(referredCandidate.getPrimarySkill());
+                    candidate.setDateOfReferral(LocalDate.now());
+                    candidate.setCandidateName(referredCandidate.getCandidateName());
+                    candidate.setExperience(referredCandidate.getExperience());
+                    candidate.setContactNumber(referredCandidate.getContactNumber());
+                    candidate.setCandidateEmail(referredCandidate.getCandidateEmail());
+                    candidate.setWillingToRelocate(referredCandidate.isWillingToRelocate());
+                    candidate.setPreferredLocation(referredCandidate.getPreferredLocation());
+                    candidate.setNoticePeriod(referredCandidate.getNoticePeriod());
+                    candidate.setProfileSource(referredCandidate.getProfileSource());
+                    candidate.setVouch(referredCandidate.isVouch());
+                    candidate.setNoticePeriodLeft(referredCandidate.getNoticePeriodLeft());
+                    candidate.setServingNoticePeriod(referredCandidate.isServingNoticePeriod());
+                    candidate.setOfferInHand(referredCandidate.isOfferInHand());
+                    candidate.setBusinessUnit(referredCandidate.getBusinessUnit());
+                    candidate.setActive(true);
+                    candidate.setReferrerEmail(email);
+                    candidate.setResume(pdfBytes);
+                    candidate.setFileName(referredCandidate.getFileName());
+                    candidate.setUpdatedAt(LocalDateTime.now());
+                    candidate.setBlacklisted(referredCandidate.isBlacklisted());
+
+                referredCandidateRepository.save(candidate);
+                // System.out.println(user);
+                fileStorageService.removeFromMemory(referredCandidate.getFileName());
+                Map<String, Object> responseMap = new HashMap<>();
+                responseMap.put("message", "Referred Candidate added Successfully");
+
+                return ResponseEntity.ok(responseMap);
             }
 
-            Optional<ReferredCandidate> existingCandidate = referredCandidateRepository.findByPanNumber(referredCandidate.getPanNumber());
-
-            if (existingCandidate.isPresent()) {
-                throw new IllegalStateException("Duplicate PAN number found: " + referredCandidate.getPanNumber());
-            }
-
-            var candidate = ReferredCandidate.builder().
-                    dateOfReferral(LocalDateTime.now()).
-                    candidateName(referredCandidate.getCandidateName()).
-                    referrerEmail(email).
-                    primarySkill(referredCandidate.getPrimarySkill()).
-                    secondarySkills(referredCandidate.getSecondarySkills()).
-                    candidateEmail(referredCandidate.getCandidateEmail()).
-                    experience(referredCandidate.getExperience()).
-                    contactNumber(referredCandidate.getContactNumber()).
-                    currentStatus(referredCandidate.getCurrentStatus()).
-                    panNumber(referredCandidate.getPanNumber()).
-                    willingToRelocate(referredCandidate.isWillingToRelocate()).
-                    interviewStatus(referredCandidate.getInterviewStatus()).
-                    interviewedPosition(referredCandidate.getInterviewedPosition()).
-                    preferredLocation(referredCandidate.getPreferredLocation()).
-                    noticePeriod(referredCandidate.getNoticePeriod()).
-                    businessUnit(referredCandidate.getBusinessUnit()).
-                    band(referredCandidate.getBand())
-                    .build();
-
-
-            // If no duplicacy and email valid, save the new referred candidate
-            referredCandidateRepository.save(candidate);
-
-            Map<String,Object> responseMap = new HashMap<>();
-            responseMap.put("message","Referred Candidate added Successfully");
-
-            return ResponseEntity.ok(responseMap);
-        }catch (Exception e){
+        } catch (Exception e) {
+            e.printStackTrace();
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -85,52 +131,112 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         }
     }
 
-    public static boolean isValidPanCard(String panNumber, String personName) {
+    public ResponseEntity<InputStreamResource> downloadResume(int id) {
+        try {
+            ReferredCandidate candidate = referredCandidateRepository.findById(id).orElseThrow();
+            byte[] resume = candidate.getResume();
 
-        String[] nameParts = personName.split("\\s+");
-        String surname = nameParts[nameParts.length - 1].toUpperCase();
+            InputStream inputStream = new ByteArrayInputStream(resume);
+            InputStreamResource resource = new InputStreamResource(inputStream);
 
-        System.out.println(surname);
-        String panPattern = String.format("[A-Z]{3}P%c[0-9]{4}[A-Z]{1}", surname.charAt(0));
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"resume.pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(resource);
 
-        Pattern pattern = Pattern.compile(panPattern);
-
-        Matcher matcher = pattern.matcher(panNumber);
-
-        return matcher.matches();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
-    public ResponseEntity<Map<String,Object>> getReferredCandidatesOfUser(){
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesOfUser(String token) {
 
-        try{
+        try {
             Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String email = ((UserDetails)principal).getUsername();
+            String email = ((UserDetails) principal).getUsername();
 
-            List<CandidateDetails> referredCandidates = referredCandidateRepository.findAllCandidatesOfReferrer(email);
-            Map<String,Object> referredCandidatesJson = new HashMap<>();
+            List<ReferredCandidate> referredCandidates = referredCandidateRepository.findByReferrerEmail(email);
 
-            referredCandidatesJson.put("referredCandidates",referredCandidates);
+            List<AllReferredCandidatesDTO> referredCandidateDTOS = referredCandidates.stream()
+                    .map(this::mapToAllReferredCandidatesDTO)
+                    .toList();
+            Map<String, Object> referredCandidatesJson = new HashMap<>();
+
+            referredCandidatesJson.put("referredCandidates", referredCandidateDTOS);
             return ResponseEntity.ok(referredCandidatesJson);
 
-        }catch(Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
+    }
+
+    private ReferredCandidateDTO mapToReferredCandidateDTO(ReferredCandidate candidate) {
+
+        return ReferredCandidateDTO.builder()
+                .id(candidate.getId())
+                .primarySkill(candidate.getPrimarySkill())
+                .candidateName(candidate.getCandidateName())
+                .experience(candidate.getExperience())
+                .contactNumber(candidate.getContactNumber())
+                .candidateEmail(candidate.getCandidateEmail())
+                .willingToRelocate(candidate.isWillingToRelocate())
+                .interviewedPosition(candidate.getInterviewedPosition())
+                .interviewTheCandidate(candidate.isInterviewTheCandidate())
+                .preferredLocation(candidate.getPreferredLocation())
+                .businessUnit(candidate.getBusinessUnit())
+                .band(candidate.getBand())
+                .vouch(candidate.isVouch())
+                .servingNoticePeriod(candidate.isServingNoticePeriod())
+                .noticePeriodLeft(candidate.getNoticePeriodLeft())
+                .offerInHand(candidate.isOfferInHand())
+                .interviewStatus(candidate.getInterviewStatus())
+                .referrerEmail(candidate.getReferrerEmail())
+                .referredCandidateHistories(candidate.getReferredCandidateHistory())
+                .build();
+    }
+
+    private AllReferredCandidatesDTO mapToAllReferredCandidatesDTO(ReferredCandidate referredCandidate) {
+        AllReferredCandidatesDTO allReferredCandidatesDTO = new AllReferredCandidatesDTO();
+
+        allReferredCandidatesDTO.setCandidateName(referredCandidate.getCandidateName());
+        allReferredCandidatesDTO.setId(referredCandidate.getId());
+        allReferredCandidatesDTO.setDateOfReferral(referredCandidate.getDateOfReferral());
+        allReferredCandidatesDTO.setInterviewedPosition(referredCandidate.getInterviewedPosition());
+
+        if (referredCandidate.getInterviewStatus() != null) {
+            allReferredCandidatesDTO.setInterviewStatus(referredCandidate.getInterviewStatus().getInterviewStatus());
+            allReferredCandidatesDTO.setCurrentStatus(referredCandidate.getInterviewStatus().getCurrentStatus());
+        }
+
+        return allReferredCandidatesDTO;
     }
 
     @Override
     public ResponseEntity<Map<String, Object>> getAllCandidates() {
 
         try{
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
+
+            User user = userRepository.findByEmail(email).orElseThrow();
+
             Map<String,Object> responseJson = new HashMap<>();
-                List<CandidateDetails> allReferredCandidates = referredCandidateRepository.findAllCandidates();
+            List<ReferredCandidate> allReferredCandidates = referredCandidateRepository.findByBusinessUnit(user.getBusinessUnit());
+            List<ReferredCandidateDTO> allReferredCandidatesDTOS = allReferredCandidates.stream()
+                    .map(this::mapToReferredCandidateDTO)
+                    .toList();
 
-            responseJson.put("candidates",allReferredCandidates);
+            responseJson.put("candidates", allReferredCandidatesDTOS);
 
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -139,16 +245,28 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     @Override
-    public ResponseEntity<Map<String, Object>> getCandidateById(int id) {
+    public ResponseEntity<Map<String, Object>> interviewTheCandidate(int id) {
+        try {
+            ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
+            if (referredCandidate.getInterviewStatus() != null) {
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "Candidate already selected for interview");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
+            }
+            referredCandidate.setInterviewTheCandidate(true);
+            InterviewStatus interviewStatus = new InterviewStatus();
+            interviewStatus.setCurrentStatus("POOL");
+            interviewStatus.setInterviewStatus("POOL");
+            referredCandidate.setInterviewStatus(interviewStatus);
+            referredCandidate.setUpdatedAt(LocalDateTime.now());
+            interviewStatus.setNoOfRounds(4);
+            referredCandidateRepository.save(referredCandidate);
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("message", "Candidate selected for interview");
 
-        try{
-            Map<String, Object> responseJson = new HashMap<>();
-            Optional<ReferredCandidate> referredCandidate = referredCandidateRepository.findById(id);
-
-            referredCandidate.ifPresent(candidate -> responseJson.put("candidate", candidate));
-
-            return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+            return ResponseEntity.ok(responseMap);
+        } catch (Exception e) {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -157,62 +275,120 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
     }
 
     @Override
-    public ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, ReferredCandidate updatedReferredCandidate) {
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatus(String status) {
+        try {
+
+            List<ReferredCandidateDTO> referredCandidateDTOS = getReferredCandidatesByInterviewStatusUtil(status);
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("filteredCandidates", referredCandidateDTOS);
+            return ResponseEntity.ok(responseMap);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    private List<ReferredCandidateDTO> getReferredCandidatesByInterviewStatusUtil(String status) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
+
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates;
+
+        if ("POOL".equals(status)) {
+            // Include candidates with null interviewStatus when currentStatus is 'POOL'
+            filteredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatusOrInterviewStatusIsNull(status);
+        } else {
+            // Exclude candidates with null interviewStatus for other status values
+            filteredCandidates = referredCandidateRepository.findByInterviewStatusCurrentStatus(status);
+        }
+
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+
+        return filteredCandidatesByBU.stream()
+                .map(this::mapToReferredCandidateDTO)
+                .toList();
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> getReferredCandidatesByInterviewStatusAndSearch(String status, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = getReferredCandidatesByInterviewStatusUtil(status);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("filteredCandidates", filteredCandidates);
+            return ResponseEntity.ok(responseMap);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+
+    @Override
+    public ResponseEntity<Map<String, Object>> updateReferredCandidate(int id, UpdateReferredCandidateRequestDTO updatedReferredCandidate) {
         try {
 
             ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
             // Editable by Recruiter:- currentStatus, interviewStatus, interviewedPosition, businessUnit, band
 
-            if (updatedReferredCandidate.getCurrentStatus() != null) {
-                referredCandidate.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
+            InterviewStatus interviewStatus = referredCandidate.getInterviewStatus();
+
+            if (updatedReferredCandidate.getBand() != null && updatedReferredCandidate.getBusinessUnit() != null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getInterviewStatus() != null
+                    && !updatedReferredCandidate.getInterviewStatus().equalsIgnoreCase(referredCandidate.getInterviewStatus().getInterviewStatus())) {
+                ReferredCandidateHistory historyEntry = new ReferredCandidateHistory();
+                historyEntry.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
+                historyEntry.setUpdateDate(LocalDateTime.now());
+                historyEntry.setReferredCandidate(referredCandidate);
+                referredCandidate.getReferredCandidateHistory().add(historyEntry);
             }
 
-            if (updatedReferredCandidate.getInterviewStatus() != null) {
-                referredCandidate.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
+            if (updatedReferredCandidate.getBand() != null && updatedReferredCandidate.getBusinessUnit() != null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getCurrentStatus() != null) {
+                interviewStatus.setCurrentStatus(updatedReferredCandidate.getCurrentStatus().toUpperCase());
+                interviewStatus.setCurrentStatusUpdated(true);
             }
 
-            if (updatedReferredCandidate.getInterviewedPosition() != null){
+            if (updatedReferredCandidate.getNoOfRounds() != 0) {
+                interviewStatus.setNoOfRounds(updatedReferredCandidate.getNoOfRounds());
+            }
+
+            if (updatedReferredCandidate.getBand() != null && updatedReferredCandidate.getBusinessUnit() != null && updatedReferredCandidate.getInterviewedPosition() != null && updatedReferredCandidate.getInterviewStatus() != null) {
+                interviewStatus.setInterviewStatus(updatedReferredCandidate.getInterviewStatus().toUpperCase());
+                interviewStatus.setInterviewStatusUpdated(true);
+            }
+
+            if (updatedReferredCandidate.getInterviewedPosition() != null) {
                 referredCandidate.setInterviewedPosition(updatedReferredCandidate.getInterviewedPosition());
             }
 
-            if(updatedReferredCandidate.getBusinessUnit()!=null) {
-                referredCandidate.setBusinessUnit(updatedReferredCandidate.getBusinessUnit());
-            }
 
-            if(updatedReferredCandidate.getBand()!=null) {
+            if (updatedReferredCandidate.getBand() != null) {
                 referredCandidate.setBand(updatedReferredCandidate.getBand().toUpperCase());
             }
 
-             ReferredCandidate savedReferredCandidate = referredCandidateRepository.save(referredCandidate);
+            referredCandidate.setUpdatedAt(LocalDateTime.now());
 
-            Optional<SelectedReferredCandidate> selectedReferredCandidateOpt = selectedReferredCandidateRepository.findByPanNumber(savedReferredCandidate.getPanNumber());
+            ReferredCandidate referredCandidate1 = referredCandidateRepository.save(referredCandidate);
 
-            if(savedReferredCandidate.getCurrentStatus().equals("SELECT") && selectedReferredCandidateOpt.isEmpty())
-            {
-
-                String band = referredCandidate.getBand();
-
-                double bonus = calculateBonus(band);
-
-                var selectedReferredCandidate = SelectedReferredCandidate.builder().
-                        name(referredCandidate.getCandidateName()).
-                        panNumber(referredCandidate.getPanNumber()).
-                        dateOfSelection(LocalDate.now()).
-                        interviewedRole(referredCandidate.getInterviewedPosition()).
-                        bonus(bonus).
-                        bonusAllocated(false).
-                        referrerEmail(referredCandidate.getReferrerEmail()).
-                        currentlyInCompany(true).build();
-
-
-                selectedReferredCandidateRepository.save(selectedReferredCandidate);
-            }
+            ReferredCandidateDTO referredCandidateDTO = mapToReferredCandidateDTO(referredCandidate1);
 
             Map<String, Object> responseJson = new HashMap<>();
-            responseJson.put("status","Successfully Updated the details");
+            responseJson.put("UpdatedReferredCandidate", referredCandidateDTO);
 
             return ResponseEntity.ok(responseJson);
-        }catch (Exception e){
+        } catch (Exception e) {
+            e.printStackTrace();
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("status", "error");
             errorMap.put("message", "An error occurred");
@@ -220,24 +396,462 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
         }
     }
 
-    private double calculateBonus(String band) {
+    private List<ReferredCandidateDTO> filterCandidatesByExperienceUtil(int experience)
+    {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
 
-        switch (band) {
-            case "B7":
-                return 50000;
-            case "B6":
-                return 75000;
-            case "B5L":
-            case "B5H":
-            case "B4L":
-                return 100000;
-            case "B4H":
-            case "B3":
-            case "B2":
-            case "B1":
-                return 150000;
-            default:
-                return 0; // Default case if the band is not recognized
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByExperienceGreaterThanEqual(experience);
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+        return filteredCandidatesByBU.stream()
+                .map(this::mapToReferredCandidateDTO)
+                .toList();
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByExperience(int experience) {
+        try {
+
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByExperienceUtil(experience);
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", referredCandidateDTOS);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
         }
+    }
+
+    private List<ReferredCandidateDTO> filterCandidatesByPreferredLocationUtil(String preferredLocation)
+    {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
+
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByPreferredLocation(preferredLocation);
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+        return filteredCandidatesByBU.stream()
+                .map(this::mapToReferredCandidateDTO)
+                .toList();
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocation(String preferredLocation) {
+        try {
+
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByPreferredLocationUtil(preferredLocation);
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", referredCandidateDTOS);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqual(int noticePeriodLeft) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByNoticePeriodLessThanOrEqualUtil(noticePeriodLeft);
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", referredCandidateDTOS);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    private List<ReferredCandidateDTO> filterCandidatesByNoticePeriodLessThanOrEqualUtil(int noticePeriodLeft) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = ((UserDetails)principal).getUsername();
+
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String businessUnit = user.getBusinessUnit();
+
+        List<ReferredCandidate> filteredCandidates = referredCandidateRepository.findByNoticePeriodLeftLessThanOrEqual(noticePeriodLeft);
+        List<ReferredCandidate> filteredCandidatesByBU = filteredCandidates.stream().filter(candidate->Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+
+        return filteredCandidatesByBU.stream()
+                .map(this::mapToReferredCandidateDTO)
+                .toList();
+
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> sendMail(int id) {
+
+        try {
+            ReferredCandidate referredCandidate = referredCandidateRepository.findById(id).orElseThrow();
+
+            InterviewStatus interviewStatus = referredCandidate.getInterviewStatus();
+
+            boolean flag1 = false;
+            boolean flag2 = false;
+            // System.out.println(referredCandidate.getCandidateName()+" "+referredCandidate.getCandidateEmail()+" "+referredCandidate.getUser().getEmail());
+
+            if (interviewStatus.isInterviewStatusUpdated()) {
+                interviewStatus.setInterviewStatusUpdated(false);
+                flag1 = true;
+                SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+                simpleMailMessage.setFrom(fromMail);
+                String subject = getSubjectOfCandidate(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
+                String template = getTemplateOfCandidate(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
+                simpleMailMessage.setSubject(subject);
+                simpleMailMessage.setText(template);
+                simpleMailMessage.setTo(referredCandidate.getCandidateEmail());
+                mailSender.send(simpleMailMessage);
+
+                SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
+                simpleMailMessage1.setFrom(fromMail);
+                String subject1 = getSubjectOfReferrer(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
+                String template1 = getTemplateOfReferrer(interviewStatus.getInterviewStatus(), referredCandidate.getCandidateName());
+                simpleMailMessage1.setSubject(subject1);
+                simpleMailMessage1.setText(template1);
+                simpleMailMessage1.setTo(referredCandidate.getReferrerEmail());
+                mailSender.send(simpleMailMessage1);
+            }
+
+            if (interviewStatus.isCurrentStatusUpdated()) {
+                interviewStatus.setCurrentStatusUpdated(false);
+                flag2 = true;
+                SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+                simpleMailMessage.setFrom(fromMail);
+                String subject = getSubjectOfCandidateForCurrentStatus(referredCandidate.getCandidateName());
+                String template = getTemplateOfCandidateForCurrentStatus(interviewStatus.getCurrentStatus(), referredCandidate.getCandidateName());
+                simpleMailMessage.setSubject(subject);
+                simpleMailMessage.setText(template);
+                simpleMailMessage.setTo(referredCandidate.getCandidateEmail());
+                mailSender.send(simpleMailMessage);
+
+                SimpleMailMessage simpleMailMessage1 = new SimpleMailMessage();
+                simpleMailMessage1.setFrom(fromMail);
+                String subject1 = getSubjectOfReferrerForCandidateStatus(referredCandidate.getCandidateName());
+                String template1 = getTemplateOfReferrerForCandidateStatus(interviewStatus.getCurrentStatus(), referredCandidate.getCandidateName());
+                simpleMailMessage1.setSubject(subject1);
+                simpleMailMessage1.setText(template1);
+                simpleMailMessage1.setTo(referredCandidate.getReferrerEmail());
+                mailSender.send(simpleMailMessage1);
+            }
+
+            if (!flag1 && !flag2) {
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("status", "error");
+                errorMap.put("message", "Mail already sent to both the referrer and candidate about the status of their recruitment process");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+            }
+
+            referredCandidateRepository.save(referredCandidate);
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("Filtered Candidates", "Mails are sent successfully to both candidate and referrer");
+
+            return ResponseEntity.ok(responseJson);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> searchCandidates(String keyword) {
+        try{
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = ((UserDetails)principal).getUsername();
+
+            User user = userRepository.findByEmail(email).orElseThrow();
+            String businessUnit = user.getBusinessUnit();
+
+            Specification<ReferredCandidate> specification = (root, query, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+
+                if (keyword != null && !keyword.isEmpty()) {
+                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("candidateName")), "%" + keyword.toLowerCase() + "%"));
+                }
+
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            };
+
+            List<ReferredCandidate> searchedCandidatesList = referredCandidateRepository.findAll(specification);
+            List<ReferredCandidate> searchCandidatesListByBU = searchedCandidatesList.stream().filter(candidate-> Objects.equals(candidate.getBusinessUnit(), businessUnit)).toList();
+            List<ReferredCandidateDTO> referredCandidateDTOS = searchCandidatesListByBU.stream()
+                    .map(this::mapToReferredCandidateDTO)
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("SearchedCandidates", referredCandidateDTOS);
+
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByExperienceAndSearch(int experience, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByExperienceUtil(experience);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("FilteredCandidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    //
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByPreferredLocationAndSearch(String preferredLocation, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByPreferredLocationUtil(preferredLocation);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("FilteredCandidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> filterCandidatesByNoticePeriodLessThanOrEqualAndSearch(int noticePeriod, String keyword) {
+        try {
+            List<ReferredCandidateDTO> referredCandidateDTOS = filterCandidatesByNoticePeriodLessThanOrEqualUtil(noticePeriod);
+
+            List<ReferredCandidateDTO> filteredCandidates = referredCandidateDTOS.stream()
+                    .filter(candidate -> candidate.getCandidateName().toLowerCase().contains(keyword.toLowerCase()))
+                    .toList();
+
+            Map<String, Object> responseJson = new HashMap<>();
+
+            responseJson.put("FilteredCandidates", filteredCandidates);
+            return ResponseEntity.ok(responseJson);
+        } catch (Exception e) {
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("status", "error");
+            errorMap.put("message", "An error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+        }
+    }
+
+
+    private String getTemplateOfReferrerForCandidateStatus(String currentStatus, String candidateName) {
+
+        String greeting = "Hello " + "Referrer" + ",\n\n";
+        String content = switch (currentStatus.toUpperCase()) {
+            case "SELECT" ->
+                    "Great news! The candidate you referred, " + candidateName + ", has been selected for the position.";
+            case "REJECT" -> "We regret to inform you that the candidate you referred, " +
+                    candidateName + ", did not pass the interview process and won't be moving forward.";
+            case "DROP" -> "The application of the candidate you referred, " + candidateName +
+                    ", has been dropped for the current position.";
+            case "ON HOLD" -> "The application of the candidate you referred, " + candidateName +
+                    ", is currently on hold. We will provide further updates soon.";
+            case "BETTER QUALIFIED FOR OTHER POSITION" -> "While the candidate you referred, " + candidateName +
+                    ", was not selected for the current position, we believe they are better qualified for another position.";
+            default -> "The status of the candidate you referred, " + candidateName +
+                    ", has been updated to " + currentStatus + ". Please check the candidate's application status.";
+        };
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String getSubjectOfReferrerForCandidateStatus(String candidateName) {
+
+        return "Application Status Update for Referred Candidate: " + candidateName;
+    }
+
+    private String getTemplateOfCandidateForCurrentStatus(String currentStatus, String candidateName) {
+
+        String greeting = "Hello " + candidateName + ",\n\n";
+        String content = switch (currentStatus.toUpperCase()) {
+            case "SELECT" -> "Congratulations! You have been selected for the position.";
+            case "REJECT" -> "We appreciate your effort, but unfortunately, you did not pass the interview process.";
+            case "DROP" -> "Your application has been dropped for the current position.";
+            case "ON HOLD" -> "Your application is currently on hold. We will provide further updates soon.";
+            case "BETTER QUALIFIED FOR OTHER POSITION" ->
+                    "While you were not selected for the current position, we believe you are better qualified for another position.";
+            default -> "Your status has been updated to " + currentStatus + ". Please check your application status.";
+        };
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String getSubjectOfCandidateForCurrentStatus(String candidateName) {
+
+        return "Application Status Update for " + candidateName;
+    }
+
+    private String getTemplateOfReferrer(String interviewStatus, String candidateName) {
+
+        interviewStatus = interviewStatus.toUpperCase();
+        String greeting = "Hello Referrer,\n\n";
+
+        String round = extractRound(interviewStatus);
+        String action = extractAction(interviewStatus);
+        String content = generateTemplate(round, action, candidateName, false);
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String extractRound(String status) {
+        // Extract round from the status (assuming round is the first part before the space)
+        return status.split("\\s+")[0];
+    }
+
+    private String extractAction(String status) {
+        // Extract action (select/reject) from the status (assuming it is the second part after the space)
+        return status.split("\\s+")[1];
+    }
+
+    private String generateTemplate(String round, String action, String candidateName, boolean forCandidate) {
+
+        if (round.startsWith("R")) {
+            int numericRound = convertRoundToNumeric(round);
+
+            if ("SELECT".equals(action)) {
+                if (forCandidate)
+                    return "Congratulations on passing round " + Integer.toString(numericRound) + " of the interview";
+                else
+                    return "Great news! The candidate you referred, " + candidateName +
+                            " has successfully passed Round " + Integer.toString(numericRound) + " of the interview";
+            } else if ("REJECT".equals(action)) {
+                if (forCandidate)
+                    return "Sorry, you have been rejected in round " + Integer.toString(numericRound) + " of the interview";
+                else
+                    return "We regret to inform you that the candidate you referred, " +
+                            candidateName + ", did not pass the round " + Integer.toString(numericRound) + " of the interview and won't be moving forward.";
+
+            } else {
+                return "Unknown action";
+            }
+        } else if ("CODELYSER".equals(round)) {
+            if ("SELECT".equals(action)) {
+                if (forCandidate)
+                    return "Congratulations on passing the Codelyser assesment test";
+                else
+                    return "We are pleased to inform you that the candidate you referred, " +
+                            candidateName + ", has passed the Codelyser assessment test";
+            } else if ("REJECT".equals(action)) {
+                if (forCandidate)
+                    return "Sorry, you have been rejected in the Codelyser assessment test";
+                else
+                    return "We regret to inform you that the candidate you referred, " +
+                            candidateName + ", did not pass the Codelyser assesment and won't be moving forward.";
+            } else {
+                return "Unknown action";
+            }
+        } else {
+            return "Unknown round";
+        }
+    }
+
+    private int convertRoundToNumeric(String round) {
+        try {
+            return Integer.parseInt(round.substring(1));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private String getSubjectOfReferrer(String interviewStatus, String candidateName) {
+        interviewStatus = interviewStatus.toUpperCase();
+        String action = extractAction(interviewStatus);
+
+        return generateSubject(action, candidateName, false);
+    }
+
+    private String getTemplateOfCandidate(String interviewStatus, String candidateName) {
+
+        interviewStatus = interviewStatus.toUpperCase();
+        String greeting = "Hello " + candidateName + ",\n\n";
+
+        String round = extractRound(interviewStatus);
+        String action = extractAction(interviewStatus);
+        String content = generateTemplate(round, action, candidateName, true);
+
+        return greeting + content + "\n\nBest regards,\nThe Interview Team";
+    }
+
+    private String getSubjectOfCandidate(String interviewStatus, String candidateName) {
+        interviewStatus = interviewStatus.toUpperCase();
+        String action = extractAction(interviewStatus);
+
+        return generateSubject(action, candidateName, true);
+    }
+
+    private String generateSubject(String action, String candidateName, boolean forCandidate) {
+        if ("SELECT".equals(action)) {
+            if (forCandidate)
+                return "Congratulations! You have been selected for the next round";
+            else
+                return "Candidate Status Update for " + candidateName;
+        } else if ("REJECT".equals(action)) {
+            if (forCandidate)
+                return "We appreciate your effort, but we won't be moving forward";
+            else
+                return "Candidate Status Update for " + candidateName;
+
+        } else {
+            return "Unknown action";
+        }
+    }
+
+
+    @Override
+    public StatusTalyDTO getStatusTallyForUser(String userEmail) {
+        long count1 = referredCandidateRepository.countByReferrerEmailAndInterviewStatus_InterviewStatus(userEmail, "R1 Select");
+        long count2 = referredCandidateRepository.countByReferrerEmailAndInterviewStatus_InterviewStatus(userEmail, "R2 Select");
+        long count3 = referredCandidateRepository.countByReferrerEmailAndInterviewStatus_InterviewStatus(userEmail, "R3 Select");
+
+        return StatusTalyDTO.builder()
+                .R1(count1)
+                .R2(count2)
+                .R3(count3)
+                .build();
     }
 }
