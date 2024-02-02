@@ -1,6 +1,7 @@
 package com.accolite.EmployeeReferralBackend.serviceImpl;
 
 import com.accolite.EmployeeReferralBackend.config.JwtService;
+import com.accolite.EmployeeReferralBackend.dtos.UserDetailsDTO;
 import com.accolite.EmployeeReferralBackend.models.GoogleTokenPayload;
 import com.accolite.EmployeeReferralBackend.models.Role;
 import com.accolite.EmployeeReferralBackend.models.User;
@@ -27,6 +28,31 @@ public class AuthServiceImpl implements AuthService {
 
     @Value("${googleUrl}")
     private String googleTokenInfoUrl;
+
+//    @Override
+//    public ResponseEntity<Map<String, Object>> saveUser(UserDetailsDTO userdetails) {
+//        try {
+//            // Validate Google token
+//            String tokenPayload = validateGoogleToken(userdetails);
+//
+//            if (tokenPayload != null) {
+//                Map<String, Object> responseMap = new HashMap<>();
+//                responseMap.put("status", "success");
+//                responseMap.put("tokenPayload", tokenPayload);
+//                return ResponseEntity.ok(responseMap);
+//            } else {
+//                Map<String, Object> errorMap = new HashMap<>();
+//                errorMap.put("status", "error");
+//                errorMap.put("message", "Invalid Google token");
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMap);
+//            }
+//        } catch (Exception e) {
+//            Map<String, Object> errorMap = new HashMap<>();
+//            errorMap.put("status", "error");
+//            errorMap.put("message", "An error occurred");
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMap);
+//        }
+//    }
 
     @Override
     public ResponseEntity<Map<String, Object>> saveUser(String googleToken) {
@@ -88,4 +114,29 @@ public class AuthServiceImpl implements AuthService {
             return null;
         }
     }
+
+
+//    private String validateGoogleToken(UserDetailsDTO userDetailsDTO){
+//
+//        String jwtToken;
+//
+//        System.out.println(userDetailsDTO.getName()+" "+userDetailsDTO.getEmail());
+//
+//        String email = userDetailsDTO.getEmail();
+//        User user = userRepository.findByEmail(email)
+//                .orElse(null);
+//
+//        if(user==null){
+//            User userEntry = new User();
+//            userEntry.setEmail(email);
+//            userEntry.setName(userDetailsDTO.getName());
+//            userEntry.setRole(Role.EMPLOYEE);
+//            userEntry.setActive(true);
+//            jwtToken = jwtService.generateToken(userRepository.save(userEntry));
+//        }else{
+//            jwtToken = jwtService.generateToken(user);
+//        }
+//
+//       return jwtToken;
+//    }
 }

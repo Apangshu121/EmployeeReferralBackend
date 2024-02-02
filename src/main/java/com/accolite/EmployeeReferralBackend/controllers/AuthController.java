@@ -1,5 +1,6 @@
 package com.accolite.EmployeeReferralBackend.controllers;
 
+import com.accolite.EmployeeReferralBackend.dtos.UserDetailsDTO;
 import com.accolite.EmployeeReferralBackend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,11 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> saveUser(@RequestBody String googleToken) {
         return authService.saveUser(googleToken);
     }
+
+//    @PostMapping("/saveUser")
+//    public ResponseEntity<Map<String, Object>> saveUser(@RequestBody UserDetailsDTO userDetailsDTO) {
+//        return authService.saveUser(userDetailsDTO);
+//    }
 
 
 }

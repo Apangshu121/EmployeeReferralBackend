@@ -131,7 +131,7 @@ public class AdminServiceImpl implements AdminService {
 
             Map<String, Object> responseJson = new HashMap<>();
 
-            responseJson.put("Searched Candidates", userDTOS);
+            responseJson.put("SearchedCandidates", userDTOS);
 
             return ResponseEntity.ok(responseJson);
         }catch (Exception e){

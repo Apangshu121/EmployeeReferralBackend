@@ -35,5 +35,6 @@ public class ReferredCandidateDTO {
     private boolean offerInHand;
     private InterviewStatus interviewStatus;
     private Set<ReferredCandidateHistory> referredCandidateHistories;
+    private boolean blacklisted;
 }
 

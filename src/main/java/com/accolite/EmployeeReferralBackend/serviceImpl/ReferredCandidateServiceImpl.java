@@ -193,6 +193,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 .businessUnit(candidate.getBusinessUnit())
                 .band(candidate.getBand())
                 .vouch(candidate.isVouch())
+                .blacklisted(candidate.isBlacklisted())
                 .servingNoticePeriod(candidate.isServingNoticePeriod())
                 .noticePeriodLeft(candidate.getNoticePeriodLeft())
                 .offerInHand(candidate.isOfferInHand())
