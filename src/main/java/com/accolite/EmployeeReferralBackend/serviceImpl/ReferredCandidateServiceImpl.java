@@ -106,6 +106,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                     candidate.setServingNoticePeriod(referredCandidate.isServingNoticePeriod());
                     candidate.setOfferInHand(referredCandidate.isOfferInHand());
                     candidate.setBusinessUnit(referredCandidate.getBusinessUnit());
+                    candidate.setTentativeDateOfJoining(LocalDate.now().plusDays(candidate.getNoticePeriodLeft()));
                     candidate.setActive(true);
                     candidate.setReferrerEmail(email);
                     candidate.setResume(pdfBytes);
@@ -196,6 +197,7 @@ public class ReferredCandidateServiceImpl implements ReferredCandidateService {
                 .blacklisted(candidate.isBlacklisted())
                 .servingNoticePeriod(candidate.isServingNoticePeriod())
                 .noticePeriodLeft(candidate.getNoticePeriodLeft())
+                .tentativeDateOfJoining(candidate.getTentativeDateOfJoining())
                 .offerInHand(candidate.isOfferInHand())
                 .interviewStatus(candidate.getInterviewStatus())
                 .referrerEmail(candidate.getReferrerEmail())

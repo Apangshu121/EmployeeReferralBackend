@@ -56,6 +56,7 @@ public class ReferredCandidate{
     private String fileName;
     private boolean blacklisted;
 
+
     @OneToMany(mappedBy = "referredCandidate", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Set<ReferredCandidateHistory> referredCandidateHistory;
@@ -64,6 +65,7 @@ public class ReferredCandidate{
 
     private LocalDateTime updatedAt;
     private LocalDate dateOfReferral;
+    private LocalDate tentativeDateOfJoining;
 
     // Editable by Recruiter:- interviewedPosition, businessUnit, band
 }
