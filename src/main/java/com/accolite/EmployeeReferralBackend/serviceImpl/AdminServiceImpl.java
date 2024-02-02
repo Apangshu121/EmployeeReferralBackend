@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -187,6 +188,7 @@ try {
 
     if (updatedCandidateDTO.getNoticePeriodLeft() != 0) {
         existingCandidate.setNoticePeriodLeft(updatedCandidateDTO.getNoticePeriodLeft());
+        existingCandidate.setTentativeDateOfJoining(existingCandidate.getDateOfReferral().plusDays(updatedCandidateDTO.getNoticePeriodLeft()));
     }
 
     if(existingCandidate.isOfferInHand()!=updatedCandidateDTO.isOfferInHand()) {
