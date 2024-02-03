@@ -17,4 +17,5 @@ public class ReferralTallyDTO {
     private int select;
     private int reject;
     private int inProgress;
+    private int todo;
 }

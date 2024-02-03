@@ -145,6 +145,8 @@ public class UserServiceImpl implements UserService {
         int select = 0;
         int reject = 0;
         int inProgress = 0;
+        int todo = 0;
+        int others = 0;
 
         totalReferrals += referredCandidates.size();
 
@@ -158,13 +160,16 @@ public class UserServiceImpl implements UserService {
                     case "REJECT":
                         reject++;
                         break;
-                    default:
+                    case "POOL":
                         inProgress++;
+                        break;
+                    default:
+                        others++;
                         break;
                 }
             } else {
                 // If interviewStatus is null, consider it as inProgress
-                inProgress++;
+                todo++;
             }
         }
 
@@ -172,6 +177,7 @@ public class UserServiceImpl implements UserService {
         referralTallyDTO.setSelect(select);
         referralTallyDTO.setReject(reject);
         referralTallyDTO.setInProgress(inProgress);
+        referralTallyDTO.setTodo(todo);
 
         return referralTallyDTO;
     }
